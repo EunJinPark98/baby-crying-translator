@@ -17,7 +17,7 @@ function showCandidates(ranked){
 function draw(data){
   const ratio=Math.min(window.devicePixelRatio||1,2),w=wave.clientWidth,h=wave.clientHeight;
   if(wave.width!==Math.round(w*ratio)||wave.height!==Math.round(h*ratio)){wave.width=Math.round(w*ratio);wave.height=Math.round(h*ratio);}
-  pen.setTransform(ratio,0,0,ratio,0,0);pen.clearRect(0,0,w,h);pen.strokeStyle='#f5c542';pen.lineWidth=2;pen.beginPath();
+  pen.setTransform(ratio,0,0,ratio,0,0);pen.clearRect(0,0,w,h);pen.strokeStyle='#b68029';pen.lineWidth=2;pen.beginPath();
   for(let x=0;x<w;x++){const v=data?data[Math.floor(x/w*data.length)]:0,y=h/2+v*h*.46;if(!x)pen.moveTo(x,y);else pen.lineTo(x,y);}pen.stroke();
 }
 function updateClock(){const secs=Math.floor((performance.now()-started)/1000);$('session').textContent=(preview?'예시':'측정 중')+' · '+String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0');}

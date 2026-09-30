@@ -54,10 +54,10 @@ Physical iPhone camera permissions, autoplay and performance still require devic
 
 ## Brand
 
-응애톡 — 아기 울음 번역기, by 별마마파파. Uses the official brand logo,
-#05060c night background, #f5c542 gold and Pretendard to match the main site
-and 별별작명소. Reference sites: https://byeolmamapapa.com/,
-https://letter.byeolmamapapa.com/, https://naming.byeolmamapapa.com/.
+응애톡 — 아기 울음 번역기, by 별마마파파. Light cream and warm gold UI,
+a service-only 응애톡 header, and a centered brand footer inspired by 별빛초대장.
+The footer links to the official brand homepage, Instagram and Kakao channel.
+Reference: https://letter.byeolmamapapa.com/.
 
 ## GitHub target
 
