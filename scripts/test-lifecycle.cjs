@@ -12,7 +12,7 @@ function setup(){
 }
 (async()=>{
  const a=setup();a.el('enableAI').checked=true;
- const start=a.run('start()');await new Promise(setImmediate);a.flushMedia();await start;
+ const start=a.el('empty').onclick();await a.el('empty').onclick();assert.equal(a.el('empty').disabled,true,'permission request prevents repeated clicks');assert.equal(a.el('stop').hidden,false,'can cancel permission request');await new Promise(setImmediate);a.flushMedia();await start;
  assert.equal(a.workers.length,1);const worker=a.workers[0];worker.onmessage({data:{type:'ready'}});
  a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,sequence:1}});
  a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,sequence:2}});
@@ -20,9 +20,9 @@ function setup(){
  const id=worker.sent[1].id;worker.onmessage({data:{type:'result',id,status:'classified',uncertain:false,ranked:[{label:'hungry',score:.8}],durationMs:200}});assert.match(a.el('resultTitle').textContent,/배고픔/);
  a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,sequence:3}});
  worker.onmessage({data:{type:'result',id:worker.sent.at(-1).id,status:'classified',uncertain:true,ranked:[{label:'hungry',score:.3},{label:'burping',score:.29}],durationMs:100}});assert.equal(a.el('candidates').hidden,false,'uncertain candidates visible');assert.match(a.el('resultState').textContent,/불확실/);
- a.run('stop()');assert.equal(a.stopped,1);assert.equal(worker.terminated,true);assert.equal(a.el('candidates').hidden,true);assert.equal(a.capture.port.onmessage,null);
+ a.run('stop()');assert.equal(a.stopped,1);assert.equal(a.el('empty').disabled,false,'listening surface is reusable');assert.equal(a.el('stop').hidden,true,'idle stop button hidden');assert.equal(worker.terminated,true);assert.equal(a.el('candidates').hidden,true);assert.equal(a.capture.port.onmessage,null);
  worker.onmessage({data:{type:'result',id,status:'classified',uncertain:false,ranked:[{label:'hungry'}]}});assert.equal(a.el('resultTitle').textContent,'어떤 소리가 들릴까요?','ignore stale model result');
- const b=setup();const pending=b.run('start()');await new Promise(setImmediate);b.run('stop()');b.flushMedia();await pending;assert.equal(b.stopped,1,'late permission result releases tracks');assert.equal(b.workers.length,0);
+ const b=setup();const pending=b.el('empty').onclick();await new Promise(setImmediate);b.run('stop()');b.flushMedia();await pending;assert.equal(b.stopped,1,'late permission result releases tracks');assert.equal(b.workers.length,0);
  const c=setup();c.run('demo()');assert.match(c.el('resultBody').textContent,/가상 예시/);c.ctx.document.hidden=true;c.events.visibilitychange();assert.equal(c.el('stop').disabled,true);
- console.log('PASS live lifecycle, no inference queue, track/worker cleanup, stale-result suppression, cancellation during permissions, demo/background cleanup.');
+ console.log('PASS one-tap start, repeat-click guard, live lifecycle, no inference queue, track/worker cleanup, stale-result suppression, cancellation during permissions, demo/background cleanup.');
 })().catch(e=>{console.error(e);process.exit(1);});

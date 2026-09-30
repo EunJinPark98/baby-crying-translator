@@ -5,6 +5,10 @@ experimental cry-label similarity. The model cannot reliably translate an
 individual baby's needs. YAMNet screens for baby crying before experimental reason-label matching.
 This screening can miss crying and mistake recorded or mixed sounds for crying.
 
+Tap the listening panel to enable camera/microphone and begin analysis.
+Analysis and quiet-input compensation default to on; optional controls are
+collapsed under settings. Audio stays in memory and is not saved as a recording.
+
 ## Develop
 
 - `npm ci`
