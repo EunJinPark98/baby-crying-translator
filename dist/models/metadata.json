@@ -1,0 +1,48 @@
+{
+  "source": "https://huggingface.co/manfye/baby-cry-reasoning",
+  "revision": "a3e1a3222ab1c813bb6dc588e83c3e9c620b4542",
+  "audio_contract": {
+    "sample_rate_hz": 16000,
+    "window_samples": 49152,
+    "active_threshold_dbfs": -50.0,
+    "target_rms_dbfs": -23.0,
+    "maximum_absolute_gain_db": 12.0,
+    "peak_limit_dbfs": -1.0,
+    "channels": 1,
+    "window_seconds": 3.072,
+    "hop_samples": 24576,
+    "hop_seconds": 1.536,
+    "short_clip_policy": "symmetric_zero_pad",
+    "long_clip_policy": "overlapping_windows_with_final_end_aligned_window",
+    "browser_resampler": "deterministic_linear_v1"
+  },
+  "reason_candidate": {
+    "version": "v0.6",
+    "family": "Extra Trees over fused acoustic summaries",
+    "labels": [
+      "belly_pain",
+      "burping",
+      "discomfort",
+      "hungry",
+      "lonely",
+      "scared"
+    ],
+    "model_url": "/models/reason-v0.6.bin",
+    "format": "little-listener-extra-trees-v1",
+    "model_sha256": "17dcfff76704f433ca6bbf25430c75691f280715e8591615fb782995197b7edc",
+    "model_bytes": 8278444,
+    "feature_count": 217,
+    "tree_count": 1000,
+    "development_validation": {
+      "files": 154,
+      "accuracy_pct": 62.33766233766234,
+      "balanced_accuracy_pct": 59.819223985890645,
+      "macro_f1_pct": 62.61352516545041,
+      "donate_kaggle_accuracy_pct": 83.14606741573034,
+      "enesbabycries2_accuracy_pct": 33.84615384615385
+    },
+    "release_ready": false,
+    "quality_gate": "audio-quality-gate-v0.2",
+    "notice": "Enabled for playful local testing only. External validation is still missing and release_ready remains false."
+  }
+}

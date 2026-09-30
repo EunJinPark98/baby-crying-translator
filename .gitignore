@@ -1,0 +1,7 @@
+node_modules/
+.sites-runtime/
+dist/analysis-worker.js
+dist/vendor/
+dist/models/*.bin
+dist/models/*.tflite
+dist/models/*.tmp

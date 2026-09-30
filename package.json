@@ -1,0 +1,17 @@
+{
+  "name": "eungaetalk",
+  "private": true,
+  "version": "0.3.0",
+  "scripts": {
+    "build": "node scripts/download-models.cjs && esbuild src/analysis-worker.ts --bundle --format=iife --platform=browser --outfile=dist/analysis-worker.js && node scripts/copy-runtime.cjs",
+    "check": "node --check dist/app.js && node --check dist/audio-capture.js && node --check dist/analysis-worker.js",
+    "test": "node scripts/test-analysis.cjs && node scripts/test-lifecycle.cjs && node scripts/test-worker-runtime.cjs"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-audio": "1.0.1",
+    "fft.js": "4.0.4"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}
