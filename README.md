@@ -73,3 +73,8 @@ Reference: https://letter.byeolmamapapa.com/.
 Requested repository: https://github.com/EunJinPark98/baby-crying-translator.
 Sites publication and GitHub are separate remotes; publishing a Site does not
 automatically upload to GitHub.
+
+## Latest validation
+
+See [2026-10-01 validation](docs/VALIDATION.md) for recorded cry/non-cry smoke cases,
+missed crying, reproducibility hashes and browser QA limits. No accuracy improvement is claimed.
