@@ -17,12 +17,44 @@ function setup(){
  a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,sequence:1}});
  a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,sequence:2}});
  assert.equal(worker.sent.filter(x=>x.type==='analyze').length,1,'no analysis backlog');
- const id=worker.sent[1].id;worker.onmessage({data:{type:'result',id,status:'classified',uncertain:false,ranked:[{label:'hungry',score:.8}],durationMs:200}});assert.match(a.el('resultTitle').textContent,/배고픔/);
- a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,sequence:3}});
- worker.onmessage({data:{type:'result',id:worker.sent.at(-1).id,status:'classified',uncertain:true,ranked:[{label:'hungry',score:.3},{label:'burping',score:.29}],durationMs:100}});assert.equal(a.el('candidates').hidden,false,'uncertain candidates visible');assert.match(a.el('resultState').textContent,/불확실/);
- a.run('stop()');assert.equal(a.stopped,1);assert.equal(a.el('empty').disabled,false,'listening surface is reusable');assert.equal(a.el('stop').hidden,true,'idle stop button hidden');assert.equal(worker.terminated,true);assert.equal(a.el('candidates').hidden,true);assert.equal(a.capture.port.onmessage,null);
- worker.onmessage({data:{type:'result',id,status:'classified',uncertain:false,ranked:[{label:'hungry'}]}});assert.equal(a.el('resultTitle').textContent,'어떤 소리가 들릴까요?','ignore stale model result');
+
+ const id=worker.sent[1].id;
+ const ranked=[{label:'hungry',score:.8},{label:'burping',score:.1}];
+ const first={type:'result',id,status:'classified',uncertain:false,ranked,durationMs:200};
+ worker.onmessage({data:first});
+ assert.equal(a.el('candidates').hidden,true,'one window must not show a reason');
+ worker.onmessage({data:first});
+ assert.equal(a.el('candidates').hidden,true,'duplicate response cannot corroborate itself');
+ function respond(data){
+   a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000}});
+   worker.onmessage({data:{type:'result',id:worker.sent.at(-1).id,...data}});
+ }
+ const strong={status:'classified',uncertain:false,ranked,durationMs:200};
+ respond(strong);
+ assert.match(a.el('resultTitle').textContent,/배고픔 후보/);
+ const title=a.el('resultTitle').textContent,stamp=a.el('analysisMeta').textContent;
+ for(const status of ['quiet','not_cry','noise','clipped','cry_unconfirmed']){
+   respond({status,soundIndex:0});
+   assert.equal(a.el('resultTitle').textContent,title,status+' retains last result');
+   assert.equal(a.el('analysisMeta').textContent,stamp,status+' retains actual timestamp');
+   assert.equal(a.el('candidates').hidden,false);
+ }
+ respond({status:'classified',uncertain:true,ranked:[{label:'burping',score:.3},{label:'hungry',score:.29}]});
+ assert.equal(a.el('resultTitle').textContent,title,'uncertainty retains previous candidate');
+ assert.match(a.el('modelStatus').textContent,/구분하기 어려워요/);
+ const changed={status:'classified',uncertain:false,ranked:[{label:'burping',score:.8},{label:'hungry',score:.1}]};
+ respond(changed);assert.equal(a.el('resultTitle').textContent,title,'one conflicting result does not replace card');
+ respond({status:'quiet'});respond(changed);
+ assert.equal(a.el('resultTitle').textContent,title,'silence breaks agreement');
+ respond(changed);assert.match(a.el('resultTitle').textContent,/트림 후보/);
+ const finalTitle=a.el('resultTitle').textContent;
+ a.run('stop()');assert.equal(a.stopped,1);assert.equal(a.el('empty').disabled,false);assert.equal(a.el('stop').hidden,true);
+ assert.equal(worker.terminated,true);assert.equal(a.el('candidates').hidden,false,'stop retains readable result');
+ assert.equal(a.capture.port.onmessage,null);assert.match(a.el('modelStatus').textContent,/듣기 종료/);
+ worker.onmessage({data:first});assert.equal(a.el('resultTitle').textContent,finalTitle,'ignore stale model result');
+ const restart=a.el('empty').onclick();assert.equal(a.el('candidates').hidden,true,'new session resets last result');
+ await new Promise(setImmediate);a.flushMedia();await restart;a.run('stop()');
  const b=setup();const pending=b.el('empty').onclick();await new Promise(setImmediate);b.run('stop()');b.flushMedia();await pending;assert.equal(b.stopped,1,'late permission result releases tracks');assert.equal(b.workers.length,0);
  const c=setup();c.run('demo()');assert.match(c.el('resultBody').textContent,/가상 예시/);c.ctx.document.hidden=true;c.events.visibilitychange();assert.equal(c.el('stop').disabled,true);
- console.log('PASS one-tap start, repeat-click guard, live lifecycle, no inference queue, track/worker cleanup, stale-result suppression, cancellation during permissions, demo/background cleanup.');
+ console.log('PASS result retention, two-window agreement, silence/uncertainty/conflict handling, restart reset, one-tap start, repeat-click guard, live lifecycle, no inference queue, track/worker cleanup, stale-result suppression, cancellation during permissions, demo/background cleanup.');
 })().catch(e=>{console.error(e);process.exit(1);});

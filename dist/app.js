@@ -4,8 +4,10 @@ const wave=$('wave'),pen=wave.getContext('2d');
 let stream=null,ctx=null,source=null,analyser=null,capture=null,worker=null;
 let raf=0,timer=0,modelTimeout=0,analysisTimeout=0,running=false,preview=false,busy=false;
 let facing='environment',epoch=0,started=0,lastPaint=0,workerReady=false,analysisBusy=false,requestId=0,receivedClip=0;
+let lastResult=false,pendingCandidate=null;
+function resetResult(){lastResult=false;pendingCandidate=null;clearCandidates();}
 const labelNames={belly_pain:'배 불편',burping:'트림',discomfort:'불편함',hungry:'배고픔',lonely:'관심 필요',scared:'놀람'};
-function result(state,title,body){$('resultState').textContent=state;$('resultTitle').textContent=title;$('resultBody').textContent=body;}
+function result(state,title,body){if(lastResult&&state!=='EXPERIMENTAL MATCH'&&state!=='DEMO · 예시'){$('modelStatus').textContent=title;return;}$('resultState').textContent=state;$('resultTitle').textContent=title;$('resultBody').textContent=body;}
 function clearCandidates(){ $('candidates').replaceChildren();$('candidates').hidden=true;$('analysisMeta').textContent=''; }
 function showCandidates(ranked){
   clearCandidates();for(const [index,item] of ranked.slice(0,3).entries()){
@@ -25,22 +27,22 @@ function controls(){
   $('enableAI').disabled=preview;$('boost').disabled=preview;
 }
 function stopWorker(){
-  clearTimeout(modelTimeout);clearTimeout(analysisTimeout);if(worker)worker.terminate();worker=null;workerReady=false;analysisBusy=false;receivedClip=0;clearCandidates();$('retryAI').hidden=true;
+  clearTimeout(modelTimeout);clearTimeout(analysisTimeout);if(worker)worker.terminate();worker=null;workerReady=false;analysisBusy=false;receivedClip=0;pendingCandidate=null;$('retryAI').hidden=true;
   $('modelStatus').textContent=$('enableAI').checked?'AI 대기 · 카메라 시작 후 연결':'AI 꺼짐';
 }
 function stop(message='소리 듣기 박스를 눌러 시작해 주세요.'){
-  epoch++;running=false;preview=false;busy=false;cancelAnimationFrame(raf);clearInterval(timer);stopWorker();
+  if(preview)resetResult();epoch++;running=false;preview=false;busy=false;cancelAnimationFrame(raf);clearInterval(timer);stopWorker();
   if(capture){capture.port.onmessage=null;capture.disconnect();capture=null;}
   if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;
   if(source)source.disconnect();source=null;
   const old=ctx;ctx=null;analyser=null;if(old)old.close().catch(()=>{});
-  $('micReading').textContent='마이크 연결 전';$('video').srcObject=null;$('empty').style.display='flex';$('cameraStatus').textContent='카메라 꺼짐';$('modeLabel').textContent='영상·음성은 저장하지 않아요';$('levelText').textContent='마이크 대기';$('meter').style.width='0%';$('session').textContent='준비 중 · 00:00';$('emptyTitle').textContent='아기의 소리를 들려주세요';$('emptyHint').textContent='여기를 눌러 시작하기';result('READY TO LISTEN','어떤 소리가 들릴까요?',message);draw();controls();
+  $('micReading').textContent='마이크 연결 전';$('video').srcObject=null;$('empty').style.display='flex';$('cameraStatus').textContent='카메라 꺼짐';$('modeLabel').textContent='영상·음성은 저장하지 않아요';$('levelText').textContent='마이크 대기';$('meter').style.width='0%';$('session').textContent='준비 중 · 00:00';$('emptyTitle').textContent='아기의 소리를 들려주세요';$('emptyHint').textContent='여기를 눌러 시작하기';result('READY TO LISTEN','어떤 소리가 들릴까요?',message);if(lastResult)$('modelStatus').textContent='듣기 종료 · 마지막 후보 표시 중';draw();controls();
 }
 function errorText(e){return ({NotAllowedError:'카메라·마이크 권한이 필요해요. 사이트 설정에서 허용해 주세요. 앱 안에서 열었다면 Safari 또는 Chrome에서 열어 주세요.',NotFoundError:'카메라 또는 마이크를 찾지 못했어요.',NotReadableError:'다른 앱이 카메라나 마이크를 사용 중일 수 있어요. 해당 앱을 닫고 다시 시작해 주세요.',OverconstrainedError:'요청한 카메라를 사용할 수 없어요.'})[e.name]||'기기를 시작하지 못했어요. Safari 또는 Chrome에서 다시 열어 주세요.';}
 async function start(){
   if(busy||running)return;$('error').textContent='';
   if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){$('error').textContent='보안 연결(HTTPS)의 Safari 또는 Chrome에서 열어 주세요.';return;}
-  busy=true;const ticket=++epoch;controls();$('emptyTitle').textContent='카메라·마이크 연결 중';$('emptyHint').textContent='권한 요청을 허용해 주세요';
+  resetResult();busy=true;const ticket=++epoch;controls();$('emptyTitle').textContent='카메라·마이크 연결 중';$('emptyHint').textContent='권한 요청을 허용해 주세요';
   try{
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error('Audio unavailable');
     const ac=new AC();ctx=ac;await ac.resume();if(ticket!==epoch)return;
@@ -67,7 +69,7 @@ async function start(){
     }else modelError('이 브라우저는 실시간 AI 분석을 지원하지 않아요. 영상과 소리 크기만 표시해요.');
   }catch(e){if(ticket!==epoch)return;stop();$('error').textContent=errorText(e);}
 }
-function modelError(message){stopWorker();$('modelStatus').textContent=message;$('retryAI').hidden=!running||!capture;result('AI UNAVAILABLE','AI 분석이 중단됐어요','영상과 소리 크기는 확인할 수 있어요. 이전 분석 결과는 지웠어요.');}
+function modelError(message){stopWorker();$('modelStatus').textContent=message;$('retryAI').hidden=!running||!capture;result('AI UNAVAILABLE','AI 분석이 중단됐어요','영상과 소리 크기는 계속 확인할 수 있어요.');}
 function startWorker(){
   stopWorker();if(!running||preview||!$('enableAI').checked)return;
   if(!capture){$('modelStatus').textContent='오디오 연결을 준비하고 있어요';return;}
@@ -82,22 +84,36 @@ function startWorker(){
       if(data.type==='progress'){if(data.stage==='reason'&&data.id===requestId){$('modelStatus').textContent='울음 감지 · 원인 후보 비교 중';}else if(data.stage==='download'){$('modelStatus').textContent='두 분석 모델을 내려받고 있어요';}else if(data.stage==='detector'){$('modelStatus').textContent='울음 감지 기능을 시작하고 있어요';}return;}
       if(data.type==='ready'){clearTimeout(modelTimeout);workerReady=true;$('modelStatus').textContent='AI 준비 완료 · 소리 수집 중';result('AI LISTENING','울음 소리를 모으고 있어요','약 3초의 소리가 모이면 울음인지 먼저 확인해요.');return;}
       if(data.type==='error'){modelError('AI 분석을 완료하지 못했어요. 다시 연결해 주세요.');return;}
-      if(data.type!=='result'||data.id!==requestId)return;
-      clearTimeout(analysisTimeout);analysisBusy=false;clearCandidates();$('modelStatus').textContent='AI 켜짐 · 다음 구간 기다리는 중';
+      if(data.type!=='result'||data.id!==requestId||!analysisBusy)return;
+      clearTimeout(analysisTimeout);analysisBusy=false;$('modelStatus').textContent='AI 켜짐 · 다음 구간 기다리는 중';
       const statuses={quiet:['분석할 소리를 기다리고 있어요',$('boost').checked?'울음이 들리면 자동으로 분석해요.':'작은 소리 자동 보정을 켜거나 마이크가 가려졌는지 확인해 주세요.'],clipped:['소리가 찌그러지고 있어요','마이크에 소리가 너무 크게 들어와 분석을 보류했어요.'],noise:['소음이 많이 섞여 있어요','울음 라벨과 비교하기 어려워 분석을 보류했어요.']};
-      if(statuses[data.status]){result('ANALYSIS PAUSED',...statuses[data.status]);return;}
+      if(statuses[data.status]){pendingCandidate=null;result('ANALYSIS PAUSED',...statuses[data.status]);return;}
       if(data.status==='not_cry'||data.status==='cry_unconfirmed'){
+        pendingCandidate=null;
         const soundNames={0:'말소리',1:'아이 말소리',2:'대화',4:'옹알이',13:'웃음',14:'아기 웃음',19:'울음',69:'강아지 소리',70:'짖는 소리',132:'음악',371:'청소기 소리',494:'무음',507:'잡음',514:'백색 소음',518:'TV 소리'};
         if(data.status==='not_cry'){const name=soundNames[data.soundIndex];result('OTHER SOUND',name?`${name}에 가까워요`:'울음 외의 소리로 감지됐어요','아기 울음이 들리면 다시 분석할게요.');}
         else{result('CHECKING FOR CRY','울음인지 확인하고 있어요','조금 더 들어볼게요.');}
-        $('analysisMeta').textContent=`${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} 갱신 · 울음 감지 단계`;
         return;
       }
       if(data.status!=='classified'||!Array.isArray(data.ranked)){modelError('분석 결과를 읽지 못했어요.');return;}
 
-      if(data.uncertain){showCandidates(data.ranked);result('UNCERTAIN · 불확실','원인 후보를 비교하고 있어요','후보 차이가 작아 아직 구분하기 어려워요.');}
-      else{showCandidates(data.ranked);const name=labelNames[data.ranked[0].label]||'알 수 없음';result('EXPERIMENTAL MATCH',`${name} 울음과 비슷해요`,'학습된 소리와 비교한 후보예요.');}
-      $('analysisMeta').textContent=`${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} 갱신 · 처리 ${(data.durationMs/1000).toFixed(1)}초${data.boosted?' · 작은 소리 보정 적용':''}`;
+      const ranked=data.ranked;
+      if(ranked.length<2||ranked.some(x=>!labelNames[x.label]||!Number.isFinite(x.score)||x.score<0)||ranked.some((x,i)=>i&&x.score>ranked[i-1].score)){modelError('분석 결과를 읽지 못했어요.');return;}
+      const top=ranked[0],now=performance.now();
+      // Overlapping-window agreement is a stability heuristic, not independent
+      // evidence or a validated improvement in accuracy.
+      if(data.uncertain||top.score<.55||top.score-ranked[1].score<.15){
+        pendingCandidate=null;
+        result('UNCERTAIN · 불확실','아직 원인을 구분하기 어려워요','울음은 감지됐지만 뚜렷한 후보가 없어요.');
+        return;
+      }
+      const repeated=pendingCandidate&&pendingCandidate.label===top.label&&now-pendingCandidate.at<=10000;
+      pendingCandidate={label:top.label,at:now};
+      if(!repeated){result('CHECKING CANDIDATE','울음 감지 · 후보 확인 중','다음 구간에서도 같은 후보인지 확인해요.');return;}
+      showCandidates(ranked);lastResult=true;
+      result('EXPERIMENTAL MATCH',`${labelNames[top.label]} 후보`,'연속 두 분석에서 비슷하게 나왔어요. 실제 원인과 다를 수 있어요.');
+      $('analysisMeta').textContent=`마지막 울음 후보 · ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+
     };
     current.postMessage({type:'init'});modelTimeout=setTimeout(()=>{if(active())modelError('모델을 내려받지 못했어요. 네트워크를 확인하고 다시 연결해 주세요.');},90000);
   }catch(e){modelError('이 브라우저에서 AI를 시작하지 못했어요.');}
@@ -116,7 +132,7 @@ function tick(now=performance.now()){
 }
 function switchCamera(){if(!running||preview||busy)return;facing=facing==='environment'?'user':'environment';stop();start();}
 function demo(){
-  if(running||busy)return;preview=true;running=true;started=performance.now();$('error').textContent='';$('cameraStatus').textContent='예시 · 실제 카메라 아님';$('modeLabel').textContent='DEMO · 예시 화면';$('empty').style.display='flex';$('levelText').textContent='예시 파형';$('modelStatus').textContent='예시 · 모델 실행 안 함';
+  if(running||busy)return;resetResult();preview=true;running=true;started=performance.now();$('error').textContent='';$('cameraStatus').textContent='예시 · 실제 카메라 아님';$('modeLabel').textContent='DEMO · 예시 화면';$('empty').style.display='flex';$('levelText').textContent='예시 파형';$('modelStatus').textContent='예시 · 모델 실행 안 함';
   result('DEMO · 예시','배고픔 라벨과 비슷해요','이 화면은 가상 예시이며, 실제 아기의 소리를 분석한 결과가 아니에요.');showCandidates([{label:'hungry'},{label:'discomfort'},{label:'burping'}]);$('analysisMeta').textContent='가상 예시 · 실제 분석 아님';$('emptyTitle').textContent='예시 화면';$('emptyHint').textContent='실제 녹음이나 분석이 아니에요';controls();timer=setInterval(updateClock,1000);updateClock();
   function frame(t){if(!preview)return;draw(Float32Array.from({length:512},(_,i)=>Math.sin(i*.14+t*.004)*Math.sin(i*.027)*.5));$('meter').style.width=(45+Math.sin(t*.002)*15)+'%';raf=requestAnimationFrame(frame);}raf=requestAnimationFrame(frame);
 }
