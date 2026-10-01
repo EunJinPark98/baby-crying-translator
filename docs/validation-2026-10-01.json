@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-01",
+  "dataset": "ESC-50: five selected recordings, two overlapping windows per file",
+  "windowSeconds": 3.072,
+  "offsetsSeconds": [
+    0,
+    1.5
+  ],
+  "sampleRate": 16000,
+  "limitations": "Small selected smoke sample, not independent held-out validation. No cry-reason ground truth; candidate correctness cannot be judged.",
+  "rows": [
+    {
+      "file": "clock_alarm-1-13613-A-37-0.f32",
+      "sha256": "95922cec7f54b80c80037610b4a6eda0cf7714db3c062e3cb7af8e47f093ceca",
+      "expected": "non_cry",
+      "status": "noise",
+      "candidate": null,
+      "uncertain": null
+    },
+    {
+      "file": "clock_alarm-1-13613-A-37-1.5.f32",
+      "sha256": "5b655d2e41e2bc8cc10ff9ec1242009bc2344b4092662ebe162c3d24357ea090",
+      "expected": "non_cry",
+      "status": "noise",
+      "candidate": null,
+      "uncertain": null
+    },
+    {
+      "file": "crying_baby-1-187207-A-20-0.f32",
+      "sha256": "d0a397b4e2abde114a2e316966eb51de72aba6b4b2b6245370b924dc1eb9cf0d",
+      "expected": "cry",
+      "status": "not_cry",
+      "candidate": null,
+      "uncertain": null
+    },
+    {
+      "file": "crying_baby-1-187207-A-20-1.5.f32",
+      "sha256": "2cefe9fa757c480458aef43fea883062ca13b030b33efe10c1795809067ed27f",
+      "expected": "cry",
+      "status": "cry_unconfirmed",
+      "candidate": null,
+      "uncertain": null
+    },
+    {
+      "file": "crying_baby-1-211527-A-20-0.f32",
+      "sha256": "ee686aa09156f0a943ec8eac6f5555ec8afba60738b3eb1f82c84349716a0c3f",
+      "expected": "cry",
+      "status": "not_cry",
+      "candidate": null,
+      "uncertain": null
+    },
+    {
+      "file": "crying_baby-1-211527-A-20-1.5.f32",
+      "sha256": "acad890cbb18a4b80786feac9d1f7de7f64d384b2f51ba7bf30d7356b03c77e3",
+      "expected": "cry",
+      "status": "classified",
+      "candidate": "belly_pain",
+      "uncertain": true
+    },
+    {
+      "file": "dog-1-100032-A-0-0.f32",
+      "sha256": "a0adf6fa1462135dc9c4e0cbd758f8ef93000fe124daed3aba4add27a7504724",
+      "expected": "non_cry",
+      "status": "not_cry",
+      "candidate": null,
+      "uncertain": null
+    },
+    {
+      "file": "dog-1-100032-A-0-1.5.f32",
+      "sha256": "4f6fea9dc16219853a59a504e480ec50d597fdf50da0f1fa0c2ce2768fb46d0e",
+      "expected": "non_cry",
+      "status": "not_cry",
+      "candidate": null,
+      "uncertain": null
+    },
+    {
+      "file": "vacuum_cleaner-1-100210-A-36-0.f32",
+      "sha256": "50d8a202ef37b48c44b5b83bd69f2537b01546b35cabb4fed5472f9b33d85c6c",
+      "expected": "non_cry",
+      "status": "noise",
+      "candidate": null,
+      "uncertain": null
+    },
+    {
+      "file": "vacuum_cleaner-1-100210-A-36-1.5.f32",
+      "sha256": "079751c117b464510b3177135c2da7948b26c11c38a2ab1a4d2f4d7746541c9b",
+      "expected": "non_cry",
+      "status": "noise",
+      "candidate": null,
+      "uncertain": null
+    }
+  ]
+}

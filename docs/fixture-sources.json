@@ -1,0 +1,47 @@
+[
+  {
+    "localName": "clock_alarm-1-13613-A-37.wav",
+    "sourceUrl": "https://raw.githubusercontent.com/karolpiczak/ESC-50/master/audio/1-13613-A-37.wav",
+    "sha256": "2e28b25e14611723cdcc0becfa36468a8d0329a0c141e4f1d894bd6bb5773f34",
+    "rate": 44100,
+    "channels": 1,
+    "sampleWidth": 2,
+    "frames": 220500
+  },
+  {
+    "localName": "crying_baby-1-187207-A-20.wav",
+    "sourceUrl": "https://raw.githubusercontent.com/karolpiczak/ESC-50/master/audio/1-187207-A-20.wav",
+    "sha256": "ddf5bf45f73bc73d1838bf0cb6af530584f324aef513112ee15c210e83ecbd6b",
+    "rate": 44100,
+    "channels": 1,
+    "sampleWidth": 2,
+    "frames": 220500
+  },
+  {
+    "localName": "crying_baby-1-211527-A-20.wav",
+    "sourceUrl": "https://raw.githubusercontent.com/karolpiczak/ESC-50/master/audio/1-211527-A-20.wav",
+    "sha256": "3cbcd59a0db21f0ed8c252c74ea1bc193117d2c13ed99821885c46c564010b3e",
+    "rate": 44100,
+    "channels": 1,
+    "sampleWidth": 2,
+    "frames": 220500
+  },
+  {
+    "localName": "dog-1-100032-A-0.wav",
+    "sourceUrl": "https://raw.githubusercontent.com/karolpiczak/ESC-50/master/audio/1-100032-A-0.wav",
+    "sha256": "f40a849a2375c8c63312a73dd2dd6c74007301fcc21b4be2ece29a642831e3d8",
+    "rate": 44100,
+    "channels": 1,
+    "sampleWidth": 2,
+    "frames": 220500
+  },
+  {
+    "localName": "vacuum_cleaner-1-100210-A-36.wav",
+    "sourceUrl": "https://raw.githubusercontent.com/karolpiczak/ESC-50/master/audio/1-100210-A-36.wav",
+    "sha256": "f97e97b0fe0afce323d858503b6fa3ffd6c8cb1162c43cf3b24461300fb9abf6",
+    "rate": 44100,
+    "channels": 1,
+    "sampleWidth": 2,
+    "frames": 220500
+  }
+]

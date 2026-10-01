@@ -48,7 +48,19 @@ function setup(){
  assert.equal(a.el('resultTitle').textContent,title,'silence breaks agreement');
  respond(changed);assert.match(a.el('resultTitle').textContent,/트림 후보/);
  const finalTitle=a.el('resultTitle').textContent;
- a.run('stop()');assert.equal(a.stopped,1);assert.equal(a.el('empty').disabled,false);assert.equal(a.el('stop').hidden,true);
+ const savedTime=a.el('analysisMeta').textContent;
+ a.run("modelError('연결 오류')");
+ assert.equal(a.el('resultTitle').textContent,finalTitle,'error retains candidate');
+ assert.equal(a.el('analysisMeta').textContent,savedTime,'error retains original timestamp');
+ assert.equal(a.el('modelStatus').textContent,'연결 오류','error details stay visible');
+ a.el('enableAI').checked=false;a.el('enableAI').onchange();
+ assert.equal(a.el('analysisMeta').textContent,savedTime,'AI off retains timestamp');
+ a.el('enableAI').checked=true;
+ a.run('switchCamera()');await new Promise(setImmediate);a.flushMedia();await new Promise(setImmediate);
+ assert.equal(a.el('resultTitle').textContent,finalTitle,'camera switch retains candidate');
+ assert.equal(a.el('analysisMeta').textContent,savedTime,'camera switch retains timestamp');
+
+ a.run('stop()');assert.equal(a.stopped,2);assert.equal(a.el('empty').disabled,false);assert.equal(a.el('stop').hidden,true);
  assert.equal(worker.terminated,true);assert.equal(a.el('candidates').hidden,false,'stop retains readable result');
  assert.equal(a.capture.port.onmessage,null);assert.match(a.el('modelStatus').textContent,/듣기 종료/);
  worker.onmessage({data:first});assert.equal(a.el('resultTitle').textContent,finalTitle,'ignore stale model result');

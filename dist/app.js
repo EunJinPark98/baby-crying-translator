@@ -36,13 +36,13 @@ function stop(message='소리 듣기 박스를 눌러 시작해 주세요.'){
   if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;
   if(source)source.disconnect();source=null;
   const old=ctx;ctx=null;analyser=null;if(old)old.close().catch(()=>{});
-  $('micReading').textContent='마이크 연결 전';$('video').srcObject=null;$('empty').style.display='flex';$('cameraStatus').textContent='카메라 꺼짐';$('modeLabel').textContent='영상·음성은 저장하지 않아요';$('levelText').textContent='마이크 대기';$('meter').style.width='0%';$('session').textContent='준비 중 · 00:00';$('emptyTitle').textContent='아기의 소리를 들려주세요';$('emptyHint').textContent='여기를 눌러 시작하기';result('READY TO LISTEN','어떤 소리가 들릴까요?',message);if(lastResult)$('modelStatus').textContent='듣기 종료 · 마지막 후보 표시 중';draw();controls();
+  $('micReading').textContent='마이크 연결 전';$('video').srcObject=null;$('empty').style.display='flex';$('cameraStatus').textContent='카메라 꺼짐';$('modeLabel').textContent='영상·음성은 저장하지 않아요';$('levelText').textContent='마이크 대기';$('meter').style.width='0%';$('session').textContent='준비 중 · 00:00';$('emptyTitle').textContent='아기의 소리를 들려주세요';$('emptyHint').textContent='눌러서 듣기 시작';result('READY TO LISTEN','어떤 소리가 들릴까요?',message);if(lastResult)$('modelStatus').textContent='듣기 종료 · 마지막 후보 표시 중';draw();controls();
 }
 function errorText(e){return ({NotAllowedError:'카메라·마이크 권한이 필요해요. 사이트 설정에서 허용해 주세요. 앱 안에서 열었다면 Safari 또는 Chrome에서 열어 주세요.',NotFoundError:'카메라 또는 마이크를 찾지 못했어요.',NotReadableError:'다른 앱이 카메라나 마이크를 사용 중일 수 있어요. 해당 앱을 닫고 다시 시작해 주세요.',OverconstrainedError:'요청한 카메라를 사용할 수 없어요.'})[e.name]||'기기를 시작하지 못했어요. Safari 또는 Chrome에서 다시 열어 주세요.';}
-async function start(){
+async function start({preserveResult=false}={}){
   if(busy||running)return;$('error').textContent='';
   if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){$('error').textContent='보안 연결(HTTPS)의 Safari 또는 Chrome에서 열어 주세요.';return;}
-  resetResult();busy=true;const ticket=++epoch;controls();$('emptyTitle').textContent='카메라·마이크 연결 중';$('emptyHint').textContent='권한 요청을 허용해 주세요';
+  if(!preserveResult)resetResult();busy=true;const ticket=++epoch;controls();$('emptyTitle').textContent='카메라·마이크 연결 중';$('emptyHint').textContent='권한 요청을 허용해 주세요';
   try{
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error('Audio unavailable');
     const ac=new AC();ctx=ac;await ac.resume();if(ticket!==epoch)return;
@@ -69,7 +69,7 @@ async function start(){
     }else modelError('이 브라우저는 실시간 AI 분석을 지원하지 않아요. 영상과 소리 크기만 표시해요.');
   }catch(e){if(ticket!==epoch)return;stop();$('error').textContent=errorText(e);}
 }
-function modelError(message){stopWorker();$('modelStatus').textContent=message;$('retryAI').hidden=!running||!capture;result('AI UNAVAILABLE','AI 분석이 중단됐어요','영상과 소리 크기는 계속 확인할 수 있어요.');}
+function modelError(message){stopWorker();result('AI UNAVAILABLE','AI 분석이 중단됐어요','영상과 소리 크기는 계속 확인할 수 있어요.');$('modelStatus').textContent=message;$('retryAI').hidden=!running||!capture;}
 function startWorker(){
   stopWorker();if(!running||preview||!$('enableAI').checked)return;
   if(!capture){$('modelStatus').textContent='오디오 연결을 준비하고 있어요';return;}
@@ -130,7 +130,7 @@ function tick(now=performance.now()){
   draw(samples);$('meter').style.width=level+'%';
   if(now-lastPaint>400){lastPaint=now;$('levelText').textContent=level<8?'작은 소리 입력':level<55?'소리가 들려요':'비교적 큰 소리';$('micReading').textContent=`입력 ${Math.round(db)} dBFS`;}raf=requestAnimationFrame(tick);
 }
-function switchCamera(){if(!running||preview||busy)return;facing=facing==='environment'?'user':'environment';stop();start();}
+function switchCamera(){if(!running||preview||busy)return;facing=facing==='environment'?'user':'environment';stop();start({preserveResult:true});}
 function demo(){
   if(running||busy)return;resetResult();preview=true;running=true;started=performance.now();$('error').textContent='';$('cameraStatus').textContent='예시 · 실제 카메라 아님';$('modeLabel').textContent='DEMO · 예시 화면';$('empty').style.display='flex';$('levelText').textContent='예시 파형';$('modelStatus').textContent='예시 · 모델 실행 안 함';
   result('DEMO · 예시','배고픔 라벨과 비슷해요','이 화면은 가상 예시이며, 실제 아기의 소리를 분석한 결과가 아니에요.');showCandidates([{label:'hungry'},{label:'discomfort'},{label:'burping'}]);$('analysisMeta').textContent='가상 예시 · 실제 분석 아님';$('emptyTitle').textContent='예시 화면';$('emptyHint').textContent='실제 녹음이나 분석이 아니에요';controls();timer=setInterval(updateClock,1000);updateClock();

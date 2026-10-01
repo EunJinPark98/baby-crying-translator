@@ -19,14 +19,15 @@ vm.runInThisContext(fs.readFileSync(path.join(root,'analysis-worker.js'),'utf8')
  assert.equal((await analyze(new Float32Array(10))).type,'error');
  const fixtureDir=process.env.CRY_FIXTURES;
  if(fixtureDir){
-  let cried=false;
+  let cried=false;const rows=[];
   for(const file of fs.readdirSync(fixtureDir).filter(x=>x.endsWith('.f32'))){
     const buffer=fs.readFileSync(path.join(fixtureDir,file));const samples=new Float32Array(buffer.buffer.slice(buffer.byteOffset,buffer.byteOffset+buffer.byteLength));
-    const actual=await analyze(samples);console.log('fixture',file,actual.status,actual.ranked?.[0]?.label||'',actual.durationMs||'');
+    const actual=await analyze(samples);rows.push({file,sha256:require('node:crypto').createHash('sha256').update(buffer).digest('hex'),expected:file.startsWith('crying_baby')?'cry':'non_cry',status:actual.status,candidate:actual.ranked?.[0]?.label||null,uncertain:actual.uncertain??null});console.log('fixture',file,actual.status,actual.ranked?.[0]?.label||'',actual.durationMs||'');
     if(file.startsWith('crying_baby')&&actual.status==='classified')cried=true;
     if(!file.startsWith('crying_baby'))assert.notEqual(actual.status,'classified','non-cry smoke fixture was sent to reason model');
   }
   assert.equal(cried,true,'at least one real cry smoke fixture reaches the reason model');
+  if(process.env.CRY_REPORT)fs.writeFileSync(process.env.CRY_REPORT,JSON.stringify({date:'2026-10-01',dataset:'ESC-50: five selected recordings, two overlapping windows per file',windowSeconds:3.072,offsetsSeconds:[0,1.5],sampleRate:16000,limitations:'Small selected smoke sample, not independent held-out validation. No cry-reason ground truth; candidate correctness cannot be judged.',rows},null,2)+'\n');
  }
  console.log('PASS shipped worker + packaged MediaPipe WASM + both real model weights; silence, clipping, pure-tone gate, invalid input.');
  process.exit(0);
