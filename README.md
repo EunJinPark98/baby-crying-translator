@@ -38,7 +38,12 @@ cap to 36 dB and lowers the input gate from -50 to -65 dBFS. This is a frontend
 adaptation, not a new model or proven accuracy improvement. Noise/clipping gates remain.
 
 The application marks results uncertain below a top score of .55 or a top-two margin of .15.
-Uncertain windows do not publish a new reason. Two consecutive qualified windows\nwithin 10 seconds must agree on the top label before replacing the last candidate.\nOverlapping windows are correlated: this reduces flicker, not proven model error.\nSilence, noise and ambiguity reset pending agreement but preserve the last displayed\ncandidate and its original timestamp. Stopping also retains it; a new session,\ndemo or page reload clears it. Current listening status is shown separately.
+Uncertain windows do not publish a new reason. Two consecutive qualified windows
+within 10 seconds must agree on the top label before replacing the last candidate.
+Overlapping windows are correlated: this reduces flicker, not proven model error.
+Silence, noise and ambiguity reset pending agreement but preserve the last displayed
+candidate and its original timestamp. Stopping also retains it; a new session,
+demo or page reload clears it. Current listening status is shown separately.
 These are conservative UI heuristics, not calibrated probabilities. Scores are
 not displayed as confidence or accuracy. There is no sleepiness class.
 
