@@ -3,9 +3,10 @@ const $=id=>document.getElementById(id);
 const wave=$('wave'),pen=wave.getContext('2d');
 let stream=null,ctx=null,source=null,analyser=null,capture=null,worker=null;
 let raf=0,timer=0,modelTimeout=0,analysisTimeout=0,running=false,preview=false,busy=false;
-let facing='environment',epoch=0,started=0,lastPaint=0,workerReady=false,analysisBusy=false,requestId=0,receivedClip=0;
-let lastResult=false,pendingCandidate=null;
+let facing='environment',epoch=0,started=0,lastPaint=0,workerReady=false,analysisBusy=false,requestId=0,lastFrame=0,meterSamples=null,audioOnlySession=false;
+let lastResult=false,pendingCandidate=null,requestBoost=false;
 function resetResult(){lastResult=false;pendingCandidate=null;clearCandidates();}
+const nextSteps={hungry:'마지막 수유 시간과 입을 오물거리는 신호를 함께 확인해 보세요.',burping:'수유 직후인지, 안아 주었을 때 편안해지는지 살펴보세요.',discomfort:'기저귀와 조이는 옷, 주변 온도를 확인해 보세요.',belly_pain:'몸을 웅크리거나 불편해하는 모습이 있는지 직접 살펴보세요.',lonely:'가까이에서 목소리를 들려주고 반응을 살펴보세요.',scared:'갑작스러운 소리나 밝은 빛이 있었는지 확인해 보세요.'};
 const labelNames={belly_pain:'배 불편',burping:'트림',discomfort:'불편함',hungry:'배고픔',lonely:'관심 필요',scared:'놀람'};
 function result(state,title,body){if(lastResult&&state!=='EXPERIMENTAL MATCH'&&state!=='DEMO · 예시'){$('modelStatus').textContent=title;return;}$('resultState').textContent=state;$('resultTitle').textContent=title;$('resultBody').textContent=body;}
 function clearCandidates(){ $('candidates').replaceChildren();$('candidates').hidden=true;$('analysisMeta').textContent=''; }
@@ -23,11 +24,11 @@ function draw(data){
 }
 function updateClock(){const secs=Math.floor((performance.now()-started)/1000);$('session').textContent=(preview?'예시':'측정 중')+' · '+String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0');}
 function controls(){
-  $('empty').disabled=running||busy;$('stop').hidden=!running&&!busy;$('stop').disabled=!running&&!busy;$('demo').disabled=running||busy;$('switch').disabled=!running||preview||busy;
+  $('empty').disabled=running||busy;$('stop').hidden=!running&&!busy;$('stop').disabled=!running&&!busy;$('demo').disabled=running||busy;$('switch').disabled=!running||preview||busy||audioOnlySession;$('audioOnly').hidden=running||busy;
   $('enableAI').disabled=preview;$('boost').disabled=preview;
 }
 function stopWorker(){
-  clearTimeout(modelTimeout);clearTimeout(analysisTimeout);if(worker)worker.terminate();worker=null;workerReady=false;analysisBusy=false;receivedClip=0;pendingCandidate=null;$('retryAI').hidden=true;
+  clearTimeout(modelTimeout);clearTimeout(analysisTimeout);if(worker)worker.terminate();worker=null;workerReady=false;analysisBusy=false;pendingCandidate=null;$('retryAI').hidden=true;
   $('modelStatus').textContent=$('enableAI').checked?'AI 대기 · 카메라 시작 후 연결':'AI 꺼짐';
 }
 function stop(message='소리 듣기 박스를 눌러 시작해 주세요.'){
@@ -35,31 +36,31 @@ function stop(message='소리 듣기 박스를 눌러 시작해 주세요.'){
   if(capture){capture.port.onmessage=null;capture.disconnect();capture=null;}
   if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;
   if(source)source.disconnect();source=null;
-  const old=ctx;ctx=null;analyser=null;if(old)old.close().catch(()=>{});
+  const old=ctx;ctx=null;analyser=null;meterSamples=null;if(old)old.close().catch(()=>{});
   $('micReading').textContent='마이크 연결 전';$('video').srcObject=null;$('empty').style.display='flex';$('cameraStatus').textContent='카메라 꺼짐';$('modeLabel').textContent='영상·음성은 저장하지 않아요';$('levelText').textContent='마이크 대기';$('meter').style.width='0%';$('session').textContent='준비 중 · 00:00';$('emptyTitle').textContent='아기의 소리를 들려주세요';$('emptyHint').textContent='눌러서 듣기 시작';result('READY TO LISTEN','어떤 소리가 들릴까요?',message);if(lastResult)$('modelStatus').textContent='듣기 종료 · 마지막 후보 표시 중';draw();controls();
 }
 function errorText(e){return ({NotAllowedError:'카메라·마이크 권한이 필요해요. 사이트 설정에서 허용해 주세요. 앱 안에서 열었다면 Safari 또는 Chrome에서 열어 주세요.',NotFoundError:'카메라 또는 마이크를 찾지 못했어요.',NotReadableError:'다른 앱이 카메라나 마이크를 사용 중일 수 있어요. 해당 앱을 닫고 다시 시작해 주세요.',OverconstrainedError:'요청한 카메라를 사용할 수 없어요.'})[e.name]||'기기를 시작하지 못했어요. Safari 또는 Chrome에서 다시 열어 주세요.';}
-async function start({preserveResult=false}={}){
+async function start({preserveResult=false,audioOnly=false}={}){
   if(busy||running)return;$('error').textContent='';
   if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){$('error').textContent='보안 연결(HTTPS)의 Safari 또는 Chrome에서 열어 주세요.';return;}
-  if(!preserveResult)resetResult();busy=true;const ticket=++epoch;controls();$('emptyTitle').textContent='카메라·마이크 연결 중';$('emptyHint').textContent='권한 요청을 허용해 주세요';
+  if(!preserveResult){resetResult();result('CONNECTING','소리를 들을 준비를 하고 있어요','브라우저의 마이크 권한을 허용해 주세요.');}busy=true;audioOnlySession=audioOnly;const ticket=++epoch;controls();$('emptyTitle').textContent=audioOnly?'마이크 연결 중':'카메라·마이크 연결 중';$('emptyHint').textContent='권한 요청을 허용해 주세요';
   try{
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error('Audio unavailable');
     const ac=new AC();ctx=ac;await ac.resume();if(ticket!==epoch)return;
-    const received=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280}},audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
+    const received=await navigator.mediaDevices.getUserMedia({video:audioOnly?false:{facingMode:{ideal:facing},width:{ideal:640},frameRate:{ideal:15,max:24}},audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
     if(ticket!==epoch){received.getTracks().forEach(t=>t.stop());return;}stream=received;
-    $('video').srcObject=stream;await $('video').play();if(ticket!==epoch)return;
-    analyser=ac.createAnalyser();analyser.fftSize=2048;source=ac.createMediaStreamSource(stream);source.connect(analyser);
+    if(!audioOnly){$('video').srcObject=stream;await $('video').play();}if(ticket!==epoch)return;
+    analyser=ac.createAnalyser();analyser.fftSize=2048;meterSamples=new Float32Array(analyser.fftSize);source=ac.createMediaStreamSource(stream);source.connect(analyser);
     stream.getTracks().forEach(t=>t.addEventListener('ended',()=>{if(ticket===epoch&&(running||busy))stop('기기 연결이 끊어졌어요. 다시 시작해 주세요.');}));
     ac.addEventListener('statechange',()=>{if(ticket===epoch&&running&&(ac.state==='suspended'||ac.state==='interrupted'))stop('오디오가 중단되어 종료했어요. 다시 시작해 주세요.');});
-    running=true;busy=false;started=performance.now();lastPaint=0;$('empty').style.display='none';$('cameraStatus').textContent='카메라 · 마이크 켜짐';controls();timer=setInterval(updateClock,1000);updateClock();result('LISTENING','소리를 듣고 있어요','약 3초씩 소리를 분석해요.');tick();
+    running=true;busy=false;started=performance.now();lastPaint=0;lastFrame=0;$('empty').style.display=audioOnly?'flex':'none';$('emptyTitle').textContent='아기의 소리를 듣고 있어요';$('emptyHint').textContent='울음이 들리면 자동으로 분석해요';$('cameraStatus').textContent=audioOnly?'마이크 켜짐':'카메라 · 마이크 켜짐';controls();timer=setInterval(updateClock,1000);updateClock();result('LISTENING','소리를 듣고 있어요','약 3초씩 소리를 분석해요.');tick();
     if(ac.audioWorklet&&window.AudioWorkletNode){
       try{
         await ac.audioWorklet.addModule('audio-capture.js?v=4');if(ticket!==epoch)return;
         capture=new AudioWorkletNode(ac,'cry-capture');source.connect(capture);capture.connect(ac.destination);
         capture.port.onmessage=({data})=>{
           if(ticket!==epoch||!running||!workerReady||analysisBusy||!$('enableAI').checked)return;
-          analysisBusy=true;receivedClip++;const id=++requestId;
+          analysisBusy=true;requestBoost=$('boost').checked;const id=++requestId;
           $('modelStatus').textContent='소리 종류 확인 중 · 약 3초 구간';
           worker.postMessage({type:'analyze',id,...data,boost:$('boost').checked},[data.samples.buffer]);
           analysisTimeout=setTimeout(()=>{if(ticket===epoch)modelError('분석이 지연됐어요. 다시 연결해 주세요.');},20000);
@@ -75,17 +76,17 @@ function startWorker(){
   if(!capture){$('modelStatus').textContent='오디오 연결을 준비하고 있어요';return;}
   const ticket=epoch;
   try{
-    const current=new Worker('analysis-worker.js?v=4');worker=current;$('modelStatus').textContent='AI 모델 준비 중 · 최초 약 19MB';
+    const current=new Worker('analysis-worker.js?v=10');worker=current;$('modelStatus').textContent='울음 감지 준비 중 · 최초 약 11MB';
     result('MODEL LOADING','AI를 준비하고 있어요','처음에는 잠시 걸릴 수 있어요.');
     const active=()=>ticket===epoch&&worker===current&&running&&$('enableAI').checked;
     current.onerror=()=>{if(active())modelError('AI 연결에 실패했어요. 다시 연결해 주세요.');};
     current.onmessage=({data})=>{
       if(!active())return;
-      if(data.type==='progress'){if(data.stage==='reason'&&data.id===requestId){$('modelStatus').textContent='울음 감지 · 원인 후보 비교 중';}else if(data.stage==='download'){$('modelStatus').textContent='두 분석 모델을 내려받고 있어요';}else if(data.stage==='detector'){$('modelStatus').textContent='울음 감지 기능을 시작하고 있어요';}return;}
+      if(data.type==='progress'){if(data.stage==='reason-loading'&&data.id===requestId&&analysisBusy){clearTimeout(analysisTimeout);analysisTimeout=setTimeout(()=>{if(active())modelError('원인 모델을 내려받지 못했어요. 다시 연결해 주세요.');},90000);$('modelStatus').textContent='울음 감지 · 원인 모델 준비 중 (최초 약 8MB)';}else if(data.stage==='reason'&&data.id===requestId){$('modelStatus').textContent='울음 감지 · 원인 후보 비교 중';}else if(data.stage==='download'){$('modelStatus').textContent='울음 감지 모델을 내려받고 있어요';}else if(data.stage==='detector'){$('modelStatus').textContent='울음 감지 기능을 시작하고 있어요';}return;}
       if(data.type==='ready'){clearTimeout(modelTimeout);workerReady=true;$('modelStatus').textContent='AI 준비 완료 · 소리 수집 중';result('AI LISTENING','울음 소리를 모으고 있어요','약 3초의 소리가 모이면 울음인지 먼저 확인해요.');return;}
       if(data.type==='error'){modelError('AI 분석을 완료하지 못했어요. 다시 연결해 주세요.');return;}
       if(data.type!=='result'||data.id!==requestId||!analysisBusy)return;
-      clearTimeout(analysisTimeout);analysisBusy=false;$('modelStatus').textContent='AI 켜짐 · 다음 구간 기다리는 중';
+      clearTimeout(analysisTimeout);analysisBusy=false;if(requestBoost!==$('boost').checked){pendingCandidate=null;return;}$('modelStatus').textContent='AI 켜짐 · 다음 구간 기다리는 중';
       const statuses={quiet:['분석할 소리를 기다리고 있어요',$('boost').checked?'울음이 들리면 자동으로 분석해요.':'작은 소리 자동 보정을 켜거나 마이크가 가려졌는지 확인해 주세요.'],clipped:['소리가 찌그러지고 있어요','마이크에 소리가 너무 크게 들어와 분석을 보류했어요.'],noise:['소음이 많이 섞여 있어요','울음 라벨과 비교하기 어려워 분석을 보류했어요.']};
       if(statuses[data.status]){pendingCandidate=null;result('ANALYSIS PAUSED',...statuses[data.status]);return;}
       if(data.status==='not_cry'||data.status==='cry_unconfirmed'){
@@ -111,7 +112,7 @@ function startWorker(){
       pendingCandidate={label:top.label,at:now};
       if(!repeated){result('CHECKING CANDIDATE','울음 감지 · 후보 확인 중','다음 구간에서도 같은 후보인지 확인해요.');return;}
       showCandidates(ranked);lastResult=true;
-      result('EXPERIMENTAL MATCH',`${labelNames[top.label]} 후보`,'연속 두 분석에서 비슷하게 나왔어요. 실제 원인과 다를 수 있어요.');
+      result('EXPERIMENTAL MATCH',`${labelNames[top.label]} 후보`,nextSteps[top.label]);
       $('analysisMeta').textContent=`마지막 울음 후보 · ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
 
     };
@@ -125,10 +126,11 @@ function toggleAI(){
 }
 function tick(now=performance.now()){
   if(!running||preview||!analyser)return;
-  const samples=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(samples);
+  raf=requestAnimationFrame(tick);if(now-lastFrame<50)return;lastFrame=now;
+  const samples=meterSamples;analyser.getFloatTimeDomainData(samples);
   let sum=0;for(const s of samples)sum+=s*s;const db=20*Math.log10(Math.max(Math.sqrt(sum/samples.length),.00001));const level=Math.min(100,Math.max(0,(db+65)/55*100));
   draw(samples);$('meter').style.width=level+'%';
-  if(now-lastPaint>400){lastPaint=now;$('levelText').textContent=level<8?'작은 소리 입력':level<55?'소리가 들려요':'비교적 큰 소리';$('micReading').textContent=`입력 ${Math.round(db)} dBFS`;}raf=requestAnimationFrame(tick);
+  if(now-lastPaint>400){lastPaint=now;$('levelText').textContent=level<8?'작은 소리 입력':level<55?'소리가 들려요':'비교적 큰 소리';$('micReading').textContent=`입력 ${Math.round(db)} dBFS`;}
 }
 function switchCamera(){if(!running||preview||busy)return;facing=facing==='environment'?'user':'environment';stop();start({preserveResult:true});}
 function demo(){
@@ -137,6 +139,6 @@ function demo(){
   function frame(t){if(!preview)return;draw(Float32Array.from({length:512},(_,i)=>Math.sin(i*.14+t*.004)*Math.sin(i*.027)*.5));$('meter').style.width=(45+Math.sin(t*.002)*15)+'%';raf=requestAnimationFrame(frame);}raf=requestAnimationFrame(frame);
 }
 function context(){const feed=$('feed').value,sleep=$('sleep').value;let title='아기의 표정과 주변 환경',body='소리만으로 원인을 정할 수 없어요. 아기를 직접 살펴보며 필요한 것을 확인해 주세요.';if(sleep==='hungry'||feed==='long'){title='수유가 필요한지 살펴봐 주세요';body='선택한 수유 간격이나 행동을 바탕으로 한 안내예요. 평소 수유 패턴과 지금 보이는 먹고 싶어 하는 신호를 함께 확인해 주세요.';}if(sleep==='tired'){title='졸린 모습인지 살펴봐 주세요';body='하품·눈 비빔을 선택하셨어요. 마지막 잠에서 깬 시간과 주변 빛·소음을 함께 확인해 보세요.';}if(sleep==='uncomfortable'){title='기저귀와 옷, 주변을 확인해 주세요';body='불편해 보이는 모습을 선택하셨어요. 젖은 기저귀나 조이는 옷이 있는지 직접 확인해 보세요.';}$('suggestTitle').textContent=title;$('suggestBody').textContent=body;}
-$('empty').onclick=start;$('stop').onclick=()=>stop();$('switch').onclick=switchCamera;$('demo').onclick=demo;$('enableAI').onchange=toggleAI;$('retryAI').onclick=()=>{$('enableAI').checked=true;startWorker();};$('boost').onchange=()=>{if(running&&!preview&&$('enableAI').checked)startWorker();};$('feed').onchange=context;$('sleep').onchange=context;$('about').onclick=()=>$('aboutDialog').showModal();$('closeAbout').onclick=()=>$('aboutDialog').close();
+$('empty').onclick=start;$('stop').onclick=()=>stop();$('switch').onclick=switchCamera;$('demo').onclick=demo;$('enableAI').onchange=toggleAI;$('retryAI').onclick=()=>{$('enableAI').checked=true;startWorker();};$('boost').onchange=()=>{pendingCandidate=null;};$('audioOnly').onclick=()=>start({audioOnly:true});$('feed').onchange=context;$('sleep').onchange=context;$('about').onclick=()=>$('aboutDialog').showModal();$('closeAbout').onclick=()=>$('aboutDialog').close();
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&(running||busy))stop('화면을 벗어나 측정을 종료했어요. 다시 시작해 주세요.');});window.addEventListener('pagehide',()=>stop());window.addEventListener('resize',()=>{if(!running)draw();});draw();
 if(document.modelContext?.registerTool){const lifecycle=new AbortController();try{Promise.resolve(document.modelContext.registerTool({name:'read_sound_session',title:'소리 관찰 상태 확인',description:'현재 화면의 관찰 상태와 실험 AI 연결 여부를 읽습니다. 녹음이나 카메라를 시작하지 않습니다.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute(input){if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length)throw new Error('입력은 빈 객체여야 합니다.');return{running,demo:preview,status:$('resultTitle').textContent,contextSuggestion:$('suggestTitle').textContent,experimentalAIEnabled:$('enableAI').checked,modelReady:workerReady,validatedCryTranslationAvailable:false};}},{signal:lifecycle.signal})).catch(()=>{});}catch{}window.addEventListener('pagehide',()=>lifecycle.abort());}

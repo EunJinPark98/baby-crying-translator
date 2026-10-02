@@ -76,5 +76,17 @@ automatically upload to GitHub.
 
 ## Latest validation
 
-See [2026-10-01 validation](docs/VALIDATION.md) for recorded cry/non-cry smoke cases,
+See [2026-10-02 validation](docs/VALIDATION.md) for recorded cry/non-cry smoke cases,
 missed crying, reproducibility hashes and browser QA limits. No accuracy improvement is claimed.
+
+## Runtime improvements — 2026-10-02
+
+An explicit microphone-only entry avoids camera permission and video processing.
+Camera preview requests 640px / 15fps instead of 1280px / unconstrained fps.
+The detector starts without the 8,278,444-byte reason model; reason weights are
+verified and loaded once per Worker only after a cry-positive, quality-qualified window.
+HTTP caching remains browser-managed; offline availability is not promised.
+The waveform reuses one 2,048-float buffer and draws at most 20fps. Gain changes
+no longer restart the Worker, and responses from the previous gain setting are discarded.
+Actual mobile latency/battery improvement has not been measured.
+No detection thresholds, model scores, or model weights were changed.

@@ -1,14 +1,14 @@
 const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
 const noop=()=>{};
 function setup(){
- const els={},workers=[],events={};let latestCapture,mediaResolve;const timers=new Map();let timerId=0,stopped=0;
+ const els={},workers=[],events={};let latestCapture,mediaResolve,mediaOptions;const timers=new Map();let timerId=0,stopped=0;
  const el=id=>els[id]??={textContent:'',value:'unknown',checked:false,style:{},hidden:false,clientWidth:500,clientHeight:60,children:[],replaceChildren(){this.children=[];},append(...children){this.children.push(...children);},play:async()=>{},getContext:()=>({setTransform:noop,clearRect:noop,beginPath:noop,moveTo:noop,lineTo:noop,stroke:noop}),showModal:noop,close:noop};
  class AC{constructor(){this.audioWorklet={addModule:async()=>{}};this.destination={};}async resume(){}async close(){}addEventListener(){}createAnalyser(){return {fftSize:2048,getFloatTimeDomainData:noop};}createMediaStreamSource(){return{connect:noop,disconnect:noop};}}
  class Capture{constructor(){latestCapture=this;this.port={};}connect(){}disconnect(){this.disconnected=true;}}
  class Worker{constructor(){workers.push(this);this.sent=[];}postMessage(x){this.sent.push(x);}terminate(){this.terminated=true;}}
- const ctx={document:{getElementById:el,createElement:()=>({className:'',append:noop}),addEventListener:(n,f)=>events[n]=f},window:{devicePixelRatio:1,isSecureContext:true,AudioContext:AC,AudioWorkletNode:Capture,addEventListener:noop},AudioWorkletNode:Capture,Worker,navigator:{mediaDevices:{getUserMedia:()=>new Promise(r=>mediaResolve=r)}},performance,requestAnimationFrame:()=>1,cancelAnimationFrame:noop,setInterval:()=>1,clearInterval:noop,setTimeout:f=>{timers.set(++timerId,f);return timerId;},clearTimeout:id=>timers.delete(id),Float32Array,AbortController,console};
+ const ctx={document:{getElementById:el,createElement:()=>({className:'',append:noop}),addEventListener:(n,f)=>events[n]=f},window:{devicePixelRatio:1,isSecureContext:true,AudioContext:AC,AudioWorkletNode:Capture,addEventListener:noop},AudioWorkletNode:Capture,Worker,navigator:{mediaDevices:{getUserMedia:options=>{mediaOptions=options;return new Promise(r=>mediaResolve=r);}}},performance,requestAnimationFrame:()=>1,cancelAnimationFrame:noop,setInterval:()=>1,clearInterval:noop,setTimeout:f=>{timers.set(++timerId,f);return timerId;},clearTimeout:id=>timers.delete(id),Float32Array,AbortController,console};
  vm.createContext(ctx);vm.runInContext(fs.readFileSync('dist/app.js','utf8'),ctx);
- return{ctx,el,workers,events,run:s=>vm.runInContext(s,ctx),flushMedia:()=>mediaResolve({getTracks:()=>[{stop:()=>stopped++,addEventListener:noop}]}),get capture(){return latestCapture;},get stopped(){return stopped;}};
+ return{ctx,el,workers,events,run:s=>vm.runInContext(s,ctx),flushMedia:()=>mediaResolve({getTracks:()=>[{stop:()=>stopped++,addEventListener:noop}]}),get mediaOptions(){return mediaOptions;},get capture(){return latestCapture;},get stopped(){return stopped;}};
 }
 (async()=>{
  const a=setup();a.el('enableAI').checked=true;
@@ -48,6 +48,9 @@ function setup(){
  assert.equal(a.el('resultTitle').textContent,title,'silence breaks agreement');
  respond(changed);assert.match(a.el('resultTitle').textContent,/트림 후보/);
  const finalTitle=a.el('resultTitle').textContent;
+ assert.match(a.el('resultBody').textContent,/수유 직후/,'candidate has actionable guidance');
+ const count=a.workers.length;a.el('boost').onchange();assert.equal(a.workers.length,count,'gain change must not reload models');
+ const meter=a.run('meterSamples');a.run('tick(100000);tick(100060)');assert.equal(a.run('meterSamples'),meter,'meter buffer reused');
  const savedTime=a.el('analysisMeta').textContent;
  a.run("modelError('연결 오류')");
  assert.equal(a.el('resultTitle').textContent,finalTitle,'error retains candidate');
@@ -67,6 +70,7 @@ function setup(){
  const restart=a.el('empty').onclick();assert.equal(a.el('candidates').hidden,true,'new session resets last result');
  await new Promise(setImmediate);a.flushMedia();await restart;a.run('stop()');
  const b=setup();const pending=b.el('empty').onclick();await new Promise(setImmediate);b.run('stop()');b.flushMedia();await pending;assert.equal(b.stopped,1,'late permission result releases tracks');assert.equal(b.workers.length,0);
+ const mic=setup();const micStart=mic.el('audioOnly').onclick();await new Promise(setImmediate);assert.equal(mic.mediaOptions.video,false,'audio-only does not request camera');mic.flushMedia();await micStart;assert.equal(mic.el('switch').disabled,true);assert.equal(mic.el('cameraStatus').textContent,'마이크 켜짐');mic.run('stop()');
  const c=setup();c.run('demo()');assert.match(c.el('resultBody').textContent,/가상 예시/);c.ctx.document.hidden=true;c.events.visibilitychange();assert.equal(c.el('stop').disabled,true);
  console.log('PASS result retention, two-window agreement, silence/uncertainty/conflict handling, restart reset, one-tap start, repeat-click guard, live lifecycle, no inference queue, track/worker cleanup, stale-result suppression, cancellation during permissions, demo/background cleanup.');
 })().catch(e=>{console.error(e);process.exit(1);});
