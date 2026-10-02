@@ -16,11 +16,7 @@ async function checkedFile(path:string,expected:string){
 }
 async function load(){
   postMessage({type:'progress',stage:'download'});
-  const [reason,cry]=await Promise.all([
-    checkedFile('models/reason-v0.6.bin',MODEL_HASH),
-    checkedFile('models/yamnet.tflite','4d8b4a53282dc83ef04e3e7dbc4fbc98082e34e44ed798e16c3a0cdd4c584faf')
-  ]);
-  bundle=parseExtraTreesBundle(reason);
+  const cry=await checkedFile('models/yamnet.tflite','4d8b4a53282dc83ef04e3e7dbc4fbc98082e34e44ed798e16c3a0cdd4c584faf');
   postMessage({type:'progress',stage:'detector'});
   const files=await FilesetResolver.forAudioTasks(new URL('vendor/mediapipe',self.location.href).href);
   detector=await AudioClassifier.createFromOptions(files,{baseOptions:{modelAssetBuffer:new Uint8Array(cry)},maxResults:-1});
@@ -31,7 +27,7 @@ async function load(){
 self.onmessage=async({data})=>{
   try{
     if(data.type==='init'){await load();return;}
-    if(data.type!=='analyze'||!bundle||!detector)throw new Error('Model not ready');
+    if(data.type!=='analyze'||!detector)throw new Error('Model not ready');
     const begin=performance.now();
     const prepared=prepareAudio(data.samples,data.sampleRate,data.boost!==false);
     if(!prepared.audio){postMessage({type:'result',id:data.id,status:prepared.status,inputDb:prepared.inputDb,gainDb:prepared.gainDb});return;}
@@ -45,6 +41,10 @@ self.onmessage=async({data})=>{
     const features=extractClassicalFeatures(prepared.audio);
     // Mean spectral flatness is feature 212 in the upstream 217-feature contract.
     if(features[212]>.55){postMessage({type:'result',id:data.id,status:'noise',inputDb:prepared.inputDb,gainDb:prepared.gainDb});return;}
+    if(!bundle){
+      postMessage({type:'progress',stage:'reason-loading',id:data.id});
+      bundle=parseExtraTreesBundle(await checkedFile('models/reason-v0.6.bin',MODEL_HASH));
+    }
     const prediction=rankScores(predictExtraTrees(bundle,features));
     postMessage({type:'result',id:data.id,status:'classified',cryDetected:true,...prediction,inputDb:prepared.inputDb,gainDb:prepared.gainDb,boosted:prepared.boosted,durationMs:Math.round(performance.now()-begin)});
   }catch(error){postMessage({type:'error',message:error instanceof Error?error.message:'Analysis failed'});}
