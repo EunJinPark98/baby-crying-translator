@@ -9,7 +9,7 @@ class CryCapture extends AudioWorkletProcessor {
       this.buffer[this.offset]=value/input.length;this.offset=(this.offset+1)%this.capacity;this.filled++;this.since++;
       if(this.filled>=this.capacity&&(this.sequence===0||this.since>=this.hop)){
         const clip=new Float32Array(this.capacity);clip.set(this.buffer.subarray(this.offset));clip.set(this.buffer.subarray(0,this.offset),this.capacity-this.offset);
-        this.port.postMessage({samples:clip,sampleRate,sequence:++this.sequence},[clip.buffer]);this.since=0;
+        this.port.postMessage({samples:clip,sampleRate,endTime:(currentFrame+i+1)/sampleRate,sequence:++this.sequence},[clip.buffer]);this.since=0;
       }
     }
     return true;

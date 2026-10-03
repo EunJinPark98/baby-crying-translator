@@ -27,11 +27,12 @@ async function run(){
  assert.equal((await analyze(new Float32Array(49152).fill(.004))).status,'quiet','DC offset is not sound');
  assert.equal((await analyze(Float32Array.from(noise,x=>x*.03))).status,'noise','quiet noise stays rejected after boost');
  assert.equal(a.ranked[0].label,b.ranked[0].label);assert.equal(a.ranked[0].label,c.ranked[0].label);
- let Processor;const batches=[];const aw={sampleRate:48000,Float32Array,AudioWorkletProcessor:class{constructor(){this.port={postMessage:m=>batches.push(m)};}},registerProcessor:(name,p)=>Processor=p};vm.createContext(aw);vm.runInContext(fs.readFileSync('dist/audio-capture.js','utf8'),aw);const processor=new Processor();
- for(let n=0;n<1152;n++)processor.process([[new Float32Array(128).fill(.1)]],[[new Float32Array(128)]]);
+ let Processor;const batches=[];const aw={sampleRate:48000,currentFrame:0,Float32Array,AudioWorkletProcessor:class{constructor(){this.port={postMessage:m=>batches.push(m)};}},registerProcessor:(name,p)=>Processor=p};vm.createContext(aw);vm.runInContext(fs.readFileSync('dist/audio-capture.js','utf8'),aw);const processor=new Processor();
+ for(let n=0;n<1152;n++){aw.currentFrame=n*128;processor.process([[new Float32Array(128).fill(.1)]],[[new Float32Array(128)]]);}
  assert.equal(batches.length,1);assert.equal(batches[0].samples.length,147456);assert.equal(batches[0].sampleRate,48000);
- for(let n=0;n<576;n++)processor.process([[new Float32Array(128).fill(.2)]],[[new Float32Array(128)]]);
+ for(let n=0;n<576;n++){aw.currentFrame=(1152+n)*128;processor.process([[new Float32Array(128).fill(.2)]],[[new Float32Array(128)]]);}
  assert.equal(batches.length,2,'half-window hop');
+ assert.equal(batches[0].endTime,3.072);assert.equal(batches[1].endTime,4.608,'capture timestamps follow audio clock');
  assert.ok(Math.abs(batches[1].samples[0]-.1)<1e-6);
  assert.ok(Math.abs(batches[1].samples.at(-1)-.2)<1e-6,'ring buffer preserves order');
  console.log('PASS low-volume regression, amplitude invariance, DC rejection, quiet-noise rejection, overlapping capture.');

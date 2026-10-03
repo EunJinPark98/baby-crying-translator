@@ -3,7 +3,7 @@ const noop=()=>{};
 function setup(){
  const els={},workers=[],events={};let latestCapture,mediaResolve,mediaOptions;const timers=new Map();let timerId=0,stopped=0;
  const el=id=>els[id]??={textContent:'',value:'unknown',checked:false,style:{},hidden:false,clientWidth:500,clientHeight:60,children:[],replaceChildren(){this.children=[];},append(...children){this.children.push(...children);},play:async()=>{},getContext:()=>({setTransform:noop,clearRect:noop,beginPath:noop,moveTo:noop,lineTo:noop,stroke:noop}),showModal:noop,close:noop};
- class AC{constructor(){this.audioWorklet={addModule:async()=>{}};this.destination={};}async resume(){}async close(){}addEventListener(){}createAnalyser(){return {fftSize:2048,getFloatTimeDomainData:noop};}createMediaStreamSource(){return{connect:noop,disconnect:noop};}}
+ class AC{constructor(){this.currentTime=3.072;this.audioWorklet={addModule:async()=>{}};this.destination={};}async resume(){}async close(){}addEventListener(){}createAnalyser(){return {fftSize:2048,getFloatTimeDomainData:noop};}createMediaStreamSource(){return{connect:noop,disconnect:noop};}}
  class Capture{constructor(){latestCapture=this;this.port={};}connect(){}disconnect(){this.disconnected=true;}}
  class Worker{constructor(){workers.push(this);this.sent=[];}postMessage(x){this.sent.push(x);}terminate(){this.terminated=true;}}
  const ctx={document:{getElementById:el,createElement:()=>({className:'',append:noop}),addEventListener:(n,f)=>events[n]=f},window:{devicePixelRatio:1,isSecureContext:true,AudioContext:AC,AudioWorkletNode:Capture,addEventListener:noop},AudioWorkletNode:Capture,Worker,navigator:{mediaDevices:{getUserMedia:options=>{mediaOptions=options;return new Promise(r=>mediaResolve=r);}}},performance,requestAnimationFrame:()=>1,cancelAnimationFrame:noop,setInterval:()=>1,clearInterval:noop,setTimeout:f=>{timers.set(++timerId,f);return timerId;},clearTimeout:id=>timers.delete(id),Float32Array,AbortController,console};
@@ -14,8 +14,8 @@ function setup(){
  const a=setup();a.el('enableAI').checked=true;
  const start=a.el('empty').onclick();await a.el('empty').onclick();assert.equal(a.el('empty').disabled,true,'permission request prevents repeated clicks');assert.equal(a.el('stop').hidden,false,'can cancel permission request');await new Promise(setImmediate);a.flushMedia();await start;
  assert.equal(a.workers.length,1);const worker=a.workers[0];worker.onmessage({data:{type:'ready'}});
- a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,sequence:1}});
- a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,sequence:2}});
+ a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,endTime:3.072,sequence:1}});
+ a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,endTime:3.072,sequence:2}});
  assert.equal(worker.sent.filter(x=>x.type==='analyze').length,1,'no analysis backlog');
 
  const id=worker.sent[1].id;
@@ -25,12 +25,17 @@ function setup(){
  assert.equal(a.el('candidates').hidden,true,'one window must not show a reason');
  worker.onmessage({data:first});
  assert.equal(a.el('candidates').hidden,true,'duplicate response cannot corroborate itself');
- function respond(data){
-   a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000}});
+ let sequence=2;
+ function respond(data,wallTime){
+   a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,endTime:3.072,sequence:++sequence}});
+   if(wallTime!==undefined)a.run('currentWindow.wallTime='+wallTime);
    worker.onmessage({data:{type:'result',id:worker.sent.at(-1).id,...data}});
  }
  const strong={status:'classified',uncertain:false,ranked,durationMs:200};
  respond(strong);
+ assert.equal(a.el('candidates').hidden,true,'a dropped window breaks consecutive agreement');
+ const capturedAt=Date.UTC(2026,9,3,1,2,3);respond(strong,capturedAt);
+ assert.equal(a.el('analysisMeta').textContent,'마지막 소리 수집 · '+new Date(capturedAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),'timestamp reflects capture rather than inference completion');
  assert.match(a.el('resultTitle').textContent,/배고픔 후보/);
  const title=a.el('resultTitle').textContent,stamp=a.el('analysisMeta').textContent;
  for(const status of ['quiet','not_cry','noise','clipped','cry_unconfirmed']){
@@ -52,6 +57,17 @@ function setup(){
  const count=a.workers.length;a.el('boost').onchange();assert.equal(a.workers.length,count,'gain change must not reload models');
  const meter=a.run('meterSamples');a.run('tick(100000);tick(100060)');assert.equal(a.run('meterSamples'),meter,'meter buffer reused');
  const savedTime=a.el('analysisMeta').textContent;
+ respond(strong);
+ a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,endTime:3.072,sequence:++sequence}});
+ a.run('currentWindow.at-=11000');worker.onmessage({data:{type:'result',id:worker.sent.at(-1).id,...strong}});
+ assert.equal(a.el('resultTitle').textContent,finalTitle,'delayed inference cannot replace last result');
+ assert.equal(a.el('analysisMeta').textContent,savedTime,'delayed inference does not refresh timestamp');
+ respond(strong);assert.equal(a.el('resultTitle').textContent,finalTitle,'delayed inference resets pending agreement');
+ a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,endTime:3.072,sequence:++sequence}});
+ a.el('boost').checked=true;a.el('boost').onchange();a.el('boost').checked=false;a.el('boost').onchange();
+ worker.onmessage({data:{type:'result',id:worker.sent.at(-1).id,...strong}});
+ assert.equal(a.el('resultTitle').textContent,finalTitle,'gain change away and back invalidates in-flight result');
+
  a.run("modelError('연결 오류')");
  assert.equal(a.el('resultTitle').textContent,finalTitle,'error retains candidate');
  assert.equal(a.el('analysisMeta').textContent,savedTime,'error retains original timestamp');
