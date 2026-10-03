@@ -33,12 +33,13 @@ function stopWorker(){
 }
 function stop(message='소리 듣기 박스를 눌러 시작해 주세요.'){
   if(preview)resetResult();epoch++;running=false;preview=false;busy=false;cancelAnimationFrame(raf);clearInterval(timer);stopWorker();
-  if(capture){capture.port.onmessage=null;capture.disconnect();capture=null;}
+  if(capture){capture.onprocessorerror=null;capture.port.onmessage=null;capture.port.onmessageerror=null;capture.disconnect();capture=null;}
   if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;
   if(source)source.disconnect();source=null;
   const old=ctx;ctx=null;analyser=null;meterSamples=null;if(old)old.close().catch(()=>{});
   $('micReading').textContent='마이크 연결 전';$('video').srcObject=null;$('empty').style.display='flex';$('cameraStatus').textContent='카메라 꺼짐';$('modeLabel').textContent='영상·음성은 저장하지 않아요';$('levelText').textContent='마이크 대기';$('meter').style.width='0%';$('session').textContent='준비 중 · 00:00';$('emptyTitle').textContent='아기의 소리를 들려주세요';$('emptyHint').textContent='눌러서 듣기 시작';result('READY TO LISTEN','어떤 소리가 들릴까요?',message);if(lastResult)$('modelStatus').textContent='듣기 종료 · 마지막 후보 표시 중';draw();controls();
 }
+function captureError(message){stop();$('error').textContent=message;}
 function errorText(e){return ({NotAllowedError:'카메라·마이크 권한이 필요해요. 사이트 설정에서 허용해 주세요. 앱 안에서 열었다면 Safari 또는 Chrome에서 열어 주세요.',NotFoundError:'카메라 또는 마이크를 찾지 못했어요.',NotReadableError:'다른 앱이 카메라나 마이크를 사용 중일 수 있어요. 해당 앱을 닫고 다시 시작해 주세요.',OverconstrainedError:'요청한 카메라를 사용할 수 없어요.'})[e.name]||'기기를 시작하지 못했어요. Safari 또는 Chrome에서 다시 열어 주세요.';}
 async function start({preserveResult=false,audioOnly=false}={}){
   if(busy||running)return;$('error').textContent='';
@@ -69,21 +70,26 @@ async function start({preserveResult=false,audioOnly=false}={}){
       }
     }if(ticket!==epoch)return;
     analyser=ac.createAnalyser();analyser.fftSize=2048;meterSamples=new Float32Array(analyser.fftSize);source=ac.createMediaStreamSource(stream);source.connect(analyser);
-    stream.getTracks().forEach(t=>t.addEventListener('ended',()=>{if(ticket===epoch&&(running||busy))stop('기기 연결이 끊어졌어요. 다시 시작해 주세요.');}));
-    ac.addEventListener('statechange',()=>{if(ticket===epoch&&running&&(ac.state==='suspended'||ac.state==='interrupted'))stop('오디오가 중단되어 종료했어요. 다시 시작해 주세요.');});
+    stream.getTracks().forEach(t=>t.addEventListener('ended',()=>{if(ticket===epoch&&(running||busy))captureError('기기 연결이 끊어졌어요. 다시 시작해 주세요.');}));
+    stream.getAudioTracks().forEach(track=>track.addEventListener('mute',()=>{if(ticket===epoch&&(running||busy))captureError('마이크 입력이 중단됐어요. 다른 앱의 마이크 사용을 확인하고 다시 시작해 주세요.');}));
+    ac.addEventListener('statechange',()=>{if(ticket===epoch&&running&&(ac.state==='suspended'||ac.state==='interrupted'))captureError('오디오가 중단되어 종료했어요. 다시 시작해 주세요.');});
     running=true;busy=false;started=performance.now();lastPaint=0;lastFrame=0;$('empty').style.display=audioOnly?'flex':'none';$('emptyTitle').textContent='아기의 소리를 듣고 있어요';$('emptyHint').textContent='울음이 들리면 자동으로 분석해요';$('cameraStatus').textContent=audioOnly?'마이크 켜짐':'카메라 · 마이크 켜짐';controls();timer=setInterval(updateClock,1000);updateClock();result('LISTENING','소리를 듣고 있어요','약 3초씩 소리를 분석해요.');tick();
     if(ac.audioWorklet&&window.AudioWorkletNode){
       try{
         await ac.audioWorklet.addModule('audio-capture.js?v=11');if(ticket!==epoch)return;
         capture=new AudioWorkletNode(ac,'cry-capture');source.connect(capture);capture.connect(ac.destination);
+        const failed=()=>{if(ticket===epoch&&running)captureError('소리 처리가 중단됐어요. 듣기를 다시 시작해 주세요.');};
+        capture.onprocessorerror=failed;capture.port.onmessageerror=failed;
         capture.port.onmessage=({data})=>{
           if(ticket!==epoch||!running||!workerReady||analysisBusy||!$('enableAI').checked)return;
+          if(!data||!(data.samples instanceof Float32Array)){failed();return;}
           const ageMs=(ctx.currentTime-data.endTime)*1000;
           if(!Number.isInteger(data.sequence)||data.sequence<1||!Number.isFinite(ageMs)||ageMs< -100||ageMs>10000){pendingCandidate=null;return;}
           currentWindow={sequence:data.sequence,at:performance.now()-Math.max(0,ageMs),wallTime:Date.now()-Math.max(0,ageMs),boostRevision};
           analysisBusy=true;requestBoost=$('boost').checked;const id=++requestId;
           $('modelStatus').textContent='소리 종류 확인 중 · 약 3초 구간';
-          worker.postMessage({type:'analyze',id,...data,boost:$('boost').checked},[data.samples.buffer]);
+          try{worker.postMessage({type:'analyze',id,...data,boost:$('boost').checked},[data.samples.buffer]);}
+          catch(error){modelError('소리를 분석기로 전달하지 못했어요. 다시 연결해 주세요.');return;}
           analysisTimeout=setTimeout(()=>{if(ticket===epoch)modelError('분석이 지연됐어요. 다시 연결해 주세요.');},20000);
         };
         if($('enableAI').checked)startWorker();
@@ -101,8 +107,10 @@ function startWorker(){
     result('MODEL LOADING','AI를 준비하고 있어요','처음에는 잠시 걸릴 수 있어요.');
     const active=()=>ticket===epoch&&worker===current&&running&&$('enableAI').checked;
     current.onerror=()=>{if(active())modelError('AI 연결에 실패했어요. 다시 연결해 주세요.');};
+    current.onmessageerror=()=>{if(active())modelError('분석 응답을 받지 못했어요. 다시 연결해 주세요.');};
     current.onmessage=({data})=>{
       if(!active())return;
+      if(!data||typeof data!=='object'){modelError('분석 응답을 읽지 못했어요. 다시 연결해 주세요.');return;}
       if(data.type==='progress'){if(data.stage==='reason-loading'&&data.id===requestId&&analysisBusy){clearTimeout(analysisTimeout);analysisTimeout=setTimeout(()=>{if(active())modelError('원인 모델을 내려받지 못했어요. 다시 연결해 주세요.');},90000);$('modelStatus').textContent='울음 감지 · 원인 모델 준비 중 (최초 약 8MB)';}else if(data.stage==='reason'&&data.id===requestId){$('modelStatus').textContent='울음 감지 · 원인 후보 비교 중';}else if(data.stage==='download'){$('modelStatus').textContent='울음 감지 모델을 내려받고 있어요';}else if(data.stage==='detector'){$('modelStatus').textContent='울음 감지 기능을 시작하고 있어요';}return;}
       if(data.type==='ready'){clearTimeout(modelTimeout);workerReady=true;$('modelStatus').textContent='AI 준비 완료 · 소리 수집 중';result('AI LISTENING','울음 소리를 모으고 있어요','약 3초의 소리가 모이면 울음인지 먼저 확인해요.');return;}
       if(data.type==='error'){modelError('AI 분석을 완료하지 못했어요. 다시 연결해 주세요.');return;}
@@ -121,7 +129,7 @@ function startWorker(){
       if(data.status!=='classified'||!Array.isArray(data.ranked)){modelError('분석 결과를 읽지 못했어요.');return;}
 
       const ranked=data.ranked;
-      if(ranked.length<2||ranked.some(x=>!labelNames[x.label]||!Number.isFinite(x.score)||x.score<0)||ranked.some((x,i)=>i&&x.score>ranked[i-1].score)){modelError('분석 결과를 읽지 못했어요.');return;}
+      if(ranked.length<2||typeof data.uncertain!=='boolean'||ranked.some(x=>!x||!labelNames[x.label]||!Number.isFinite(x.score)||x.score<0||x.score>1)||new Set(ranked.map(x=>x.label)).size!==ranked.length||ranked.some((x,i)=>i&&x.score>ranked[i-1].score)){modelError('분석 결과를 읽지 못했어요.');return;}
       const top=ranked[0];
       // Overlapping-window agreement is a stability heuristic, not independent
       // evidence or a validated improvement in accuracy.

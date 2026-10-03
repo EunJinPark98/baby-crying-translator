@@ -1,14 +1,14 @@
 const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
 const noop=()=>{};
 function setup(){
- const els={},workers=[],events={};let latestCapture,mediaResolve,mediaReject,mediaOptions;const timers=new Map();let timerId=0,stopped=0;
+ const els={},workers=[],events={},trackEvents={};let latestCapture,mediaResolve,mediaReject,mediaOptions;const timers=new Map();let timerId=0,stopped=0;
  const el=id=>els[id]??={textContent:'',value:'unknown',checked:false,style:{},hidden:false,clientWidth:500,clientHeight:60,children:[],replaceChildren(){this.children=[];},append(...children){this.children.push(...children);},play:async()=>{},getContext:()=>({setTransform:noop,clearRect:noop,beginPath:noop,moveTo:noop,lineTo:noop,stroke:noop}),showModal:noop,close:noop};
  class AC{constructor(){this.currentTime=3.072;this.audioWorklet={addModule:async()=>{}};this.destination={};}async resume(){}async close(){}addEventListener(){}createAnalyser(){return {fftSize:2048,getFloatTimeDomainData:noop};}createMediaStreamSource(){return{connect:noop,disconnect:noop};}}
  class Capture{constructor(){latestCapture=this;this.port={};}connect(){}disconnect(){this.disconnected=true;}}
  class Worker{constructor(){workers.push(this);this.sent=[];}postMessage(x){this.sent.push(x);}terminate(){this.terminated=true;}}
  const ctx={document:{getElementById:el,createElement:()=>({className:'',append:noop}),addEventListener:(n,f)=>events[n]=f},window:{devicePixelRatio:1,isSecureContext:true,AudioContext:AC,AudioWorkletNode:Capture,addEventListener:noop},AudioWorkletNode:Capture,Worker,navigator:{mediaDevices:{getUserMedia:options=>{mediaOptions=options;return new Promise((resolve,reject)=>{mediaResolve=resolve;mediaReject=reject;});}}},performance,requestAnimationFrame:()=>1,cancelAnimationFrame:noop,setInterval:()=>1,clearInterval:noop,setTimeout:f=>{timers.set(++timerId,f);return timerId;},clearTimeout:id=>timers.delete(id),Float32Array,AbortController,console};
  vm.createContext(ctx);vm.runInContext(fs.readFileSync('dist/app.js','utf8'),ctx);
- return{ctx,el,workers,events,run:s=>vm.runInContext(s,ctx),rejectMedia:name=>mediaReject(Object.assign(new Error(name),{name})),flushMedia:()=>mediaResolve({getVideoTracks:()=>[{stop:noop}],getTracks:()=>[{stop:()=>stopped++,addEventListener:noop}]}),get mediaOptions(){return mediaOptions;},get capture(){return latestCapture;},get stopped(){return stopped;}};
+ return{ctx,el,workers,events,trackEvents,run:s=>vm.runInContext(s,ctx),rejectMedia:name=>mediaReject(Object.assign(new Error(name),{name})),flushMedia:()=>mediaResolve({getVideoTracks:()=>[{stop:noop}],getAudioTracks:()=>[{addEventListener:(name,handler)=>trackEvents[name]=handler}],getTracks:()=>[{stop:()=>stopped++,addEventListener:noop}]}),get mediaOptions(){return mediaOptions;},get capture(){return latestCapture;},get stopped(){return stopped;}};
 }
 (async()=>{
  const a=setup();a.el('enableAI').checked=true;
@@ -91,5 +91,24 @@ function setup(){
  const playback=setup();playback.el('video').play=async()=>{throw Object.assign(new Error('blocked'),{name:'NotAllowedError'});};playback.el('enableAI').checked=true;const playbackStart=playback.el('empty').onclick();await new Promise(setImmediate);playback.flushMedia();await playbackStart;assert.equal(playback.el('cameraStatus').textContent,'마이크 켜짐');assert.equal(playback.workers.length,1,'video autoplay failure does not disable analysis');assert.equal(playback.el('switch').disabled,true);playback.run('stop()');
  const denied=setup();const deniedStart=denied.el('empty').onclick();await new Promise(setImmediate);denied.rejectMedia('NotAllowedError');await deniedStart;assert.equal(denied.workers.length,0);assert.equal(denied.el('empty').disabled,false,'permission denial returns to idle');assert.notEqual(denied.mediaOptions.video,false,'permission denial must not trigger repeated permission request');
  const c=setup();c.run('demo()');assert.match(c.el('resultBody').textContent,/가상 예시/);c.ctx.document.hidden=true;c.events.visibilitychange();assert.equal(c.el('stop').disabled,true);
+ // Failure injection must release resources without losing a displayed candidate.
+ for(const failure of ['processor','port','mute','worker-message','post-message','malformed','invalid-scores']){
+  const f=setup();f.el('enableAI').checked=true;const starting=f.el('audioOnly').onclick();await new Promise(setImmediate);f.flushMedia();await starting;
+  const w=f.workers[0];w.onmessage({data:{type:'ready'}});
+  f.run("lastResult=true");f.el('resultTitle').textContent='보존 후보';f.el('analysisMeta').textContent='원래 시각';
+  if(failure==='processor')f.capture.onprocessorerror();
+  if(failure==='port')f.capture.port.onmessageerror();
+  if(failure==='mute')f.trackEvents.mute();
+  if(failure==='worker-message')w.onmessageerror();
+  if(failure==='malformed')w.onmessage({data:null});
+  if(failure==='post-message'){w.postMessage=()=>{throw new Error('DataCloneError');};f.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,endTime:3.072,sequence:1}});}
+  if(failure==='invalid-scores'){
+   f.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,endTime:3.072,sequence:1}});
+   w.onmessage({data:{type:'result',id:w.sent.at(-1).id,status:'classified',uncertain:false,ranked:[{label:'hungry',score:1.8},{label:'hungry',score:.1}]}});
+  }
+  assert.equal(f.el('resultTitle').textContent,'보존 후보',failure+' preserves candidate');assert.equal(f.el('analysisMeta').textContent,'원래 시각',failure+' preserves capture time');assert.equal(w.terminated,true,failure+' terminates failed inference');
+  if(['processor','port','mute'].includes(failure)){assert.equal(f.stopped,1);assert.equal(f.el('stop').hidden,true);assert.equal(f.capture.port.onmessage,null);assert.equal(f.capture.onprocessorerror,null);assert.ok(f.el('error').textContent.length>0);}
+  else{assert.equal(f.el('retryAI').hidden,false);assert.equal(f.run('analysisBusy'),false);f.run('stop()');}
+ }
  console.log('PASS result retention, two-window agreement, silence/uncertainty/conflict handling, restart reset, one-tap start, repeat-click guard, live lifecycle, no inference queue, track/worker cleanup, stale-result suppression, cancellation during permissions, demo/background cleanup.');
 })().catch(e=>{console.error(e);process.exit(1);});
