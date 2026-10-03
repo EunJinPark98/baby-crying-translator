@@ -2,6 +2,8 @@ const sampleCount=49152;
 const labels=['belly_pain','burping','discomfort','hungry','lonely','scared'];
 export function prepareAudio(input:Float32Array,rate:number,boost=true){
   if(!Number.isFinite(rate)||rate<8000||rate>192000||!(input instanceof Float32Array)||input.length<rate*2.9||input.length>rate*3.3)throw new Error('Invalid audio window');
+  // Validate all captured samples, including points skipped by downsampling.
+  for(const value of input)if(!Number.isFinite(value))throw new Error('Invalid audio sample');
   const audio=new Float32Array(sampleCount);
   let energy=0,peak=0,clipped=0,crossings=0,mean=0;
   for(let i=0;i<sampleCount;i++){

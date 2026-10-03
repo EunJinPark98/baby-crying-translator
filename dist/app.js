@@ -47,9 +47,27 @@ async function start({preserveResult=false,audioOnly=false}={}){
   try{
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error('Audio unavailable');
     const ac=new AC();ctx=ac;await ac.resume();if(ticket!==epoch)return;
-    const received=await navigator.mediaDevices.getUserMedia({video:audioOnly?false:{facingMode:{ideal:facing},width:{ideal:640},frameRate:{ideal:15,max:24}},audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
+    const audioConstraints={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1};
+    let received;
+    try{received=await navigator.mediaDevices.getUserMedia({video:audioOnly?false:{facingMode:{ideal:facing},width:{ideal:640},frameRate:{ideal:15,max:24}},audio:audioConstraints});}
+    catch(error){
+      if(ticket!==epoch)return;
+      if(audioOnly||!['NotFoundError','OverconstrainedError'].includes(error.name))throw error;
+      audioOnly=true;audioOnlySession=true;
+      $('error').textContent='카메라를 사용할 수 없어 마이크로 연결하고 있어요.';
+      received=await navigator.mediaDevices.getUserMedia({video:false,audio:audioConstraints});
+      if(ticket===epoch)$('error').textContent='카메라를 사용할 수 없어 소리만 듣고 있어요.';
+    }
     if(ticket!==epoch){received.getTracks().forEach(t=>t.stop());return;}stream=received;
-    if(!audioOnly){$('video').srcObject=stream;await $('video').play();}if(ticket!==epoch)return;
+    if(!audioOnly){
+      $('video').srcObject=stream;
+      try{await $('video').play();}catch(error){
+        if(ticket!==epoch)return;
+        stream.getVideoTracks().forEach(track=>track.stop());$('video').srcObject=null;
+        audioOnly=true;audioOnlySession=true;
+        $('error').textContent='영상 미리보기를 시작하지 못했어요. 소리 분석은 계속할 수 있어요.';
+      }
+    }if(ticket!==epoch)return;
     analyser=ac.createAnalyser();analyser.fftSize=2048;meterSamples=new Float32Array(analyser.fftSize);source=ac.createMediaStreamSource(stream);source.connect(analyser);
     stream.getTracks().forEach(t=>t.addEventListener('ended',()=>{if(ticket===epoch&&(running||busy))stop('기기 연결이 끊어졌어요. 다시 시작해 주세요.');}));
     ac.addEventListener('statechange',()=>{if(ticket===epoch&&running&&(ac.state==='suspended'||ac.state==='interrupted'))stop('오디오가 중단되어 종료했어요. 다시 시작해 주세요.');});
@@ -79,7 +97,7 @@ function startWorker(){
   if(!capture){$('modelStatus').textContent='오디오 연결을 준비하고 있어요';return;}
   const ticket=epoch;
   try{
-    const current=new Worker('analysis-worker.js?v=10');worker=current;$('modelStatus').textContent='울음 감지 준비 중 · 최초 약 11MB';
+    const current=new Worker('analysis-worker.js?v=12');worker=current;$('modelStatus').textContent='울음 감지 준비 중 · 최초 약 11MB';
     result('MODEL LOADING','AI를 준비하고 있어요','처음에는 잠시 걸릴 수 있어요.');
     const active=()=>ticket===epoch&&worker===current&&running&&$('enableAI').checked;
     current.onerror=()=>{if(active())modelError('AI 연결에 실패했어요. 다시 연결해 주세요.');};

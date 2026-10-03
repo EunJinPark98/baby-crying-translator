@@ -6,6 +6,7 @@ async function run(){
  const code=require('esbuild').buildSync({stdin:{contents:"export {prepareAudio,rankScores} from './src/audio-core';export {parseExtraTreesBundle,extractClassicalFeatures,predictExtraTrees} from './src/vendor/extra-trees';",resolveDir:process.cwd(),loader:'ts'},bundle:true,write:false,format:'iife',globalName:'Core'}).outputFiles[0].text;
  const context={Float32Array,Float64Array,Int32Array,Int16Array,Uint8Array,DataView,ArrayBuffer,performance,console};vm.createContext(context);vm.runInContext(code,context);
  const {prepareAudio,rankScores,parseExtraTreesBundle,extractClassicalFeatures,predictExtraTrees}=context.Core;
+ assert.throws(()=>prepareAudio(Float32Array.from({length:147456},(_,i)=>i===1?NaN:0),48000),'invalid input between decimated samples rejected');
  const bytes=fs.readFileSync('dist/models/reason-v0.6.bin');const bundle=parseExtraTreesBundle(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
  const analyze=async(samples,rate=16000,boost=true)=>{
    try{const p=prepareAudio(samples,rate,boost);if(!p.audio)return p;const features=extractClassicalFeatures(p.audio);if(features[212]>.55)return {status:'noise'};return {status:'classified',...rankScores(predictExtraTrees(bundle,features)),boosted:p.boosted};}catch{return {type:'error'};}
