@@ -1,0 +1,479 @@
+{
+  "date": "2026-10-03",
+  "modelSha256": "4d8b4a53282dc83ef04e3e7dbc4fbc98082e34e44ed798e16c3a0cdd4c584faf",
+  "limitations": "Selected overlapping smoke fixtures, not independent accuracy validation. Scores are model outputs, not calibrated probabilities. No reason ground truth.",
+  "rows": [
+    {
+      "file": "clock_alarm-1-13613-A-37-0.f32",
+      "sha256": "95922cec7f54b80c80037610b4a6eda0cf7714db3c062e3cb7af8e47f093ceca",
+      "preprocessing": "noise",
+      "inputDb": -18,
+      "gainDb": 0
+    },
+    {
+      "file": "clock_alarm-1-13613-A-37-1.5.f32",
+      "sha256": "5b655d2e41e2bc8cc10ff9ec1242009bc2344b4092662ebe162c3d24357ea090",
+      "preprocessing": "noise",
+      "inputDb": -17,
+      "gainDb": 0
+    },
+    {
+      "file": "crying_baby-1-187207-A-20-0.f32",
+      "sha256": "d0a397b4e2abde114a2e316966eb51de72aba6b4b2b6245370b924dc1eb9cf0d",
+      "preprocessing": "ready",
+      "inputDb": -15,
+      "gainDb": -8,
+      "decision": {
+        "status": "not_cry",
+        "topIndex": 0,
+        "cryScore": 0.020833333333333332
+      },
+      "frames": [
+        {
+          "babyCry": 0.04296875,
+          "top": [
+            {
+              "index": 0,
+              "label": "Speech",
+              "score": 0.19921875
+            },
+            {
+              "index": 33,
+              "label": "Groan",
+              "score": 0.1484375
+            },
+            {
+              "index": 461,
+              "label": "Slap, smack",
+              "score": 0.109375
+            }
+          ]
+        },
+        {
+          "babyCry": 0.00390625,
+          "top": [
+            {
+              "index": 0,
+              "label": "Speech",
+              "score": 0.26171875
+            },
+            {
+              "index": 1,
+              "label": "Child speech, kid speaking",
+              "score": 0.1484375
+            },
+            {
+              "index": 500,
+              "label": "Inside, small room",
+              "score": 0.03125
+            }
+          ]
+        },
+        {
+          "babyCry": 0.015625,
+          "top": [
+            {
+              "index": 80,
+              "label": "Caterwaul",
+              "score": 0.19921875
+            },
+            {
+              "index": 0,
+              "label": "Speech",
+              "score": 0.19921875
+            },
+            {
+              "index": 76,
+              "label": "Cat",
+              "score": 0.19921875
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "crying_baby-1-187207-A-20-1.5.f32",
+      "sha256": "2cefe9fa757c480458aef43fea883062ca13b030b33efe10c1795809067ed27f",
+      "preprocessing": "ready",
+      "inputDb": -19,
+      "gainDb": -4,
+      "decision": {
+        "status": "unconfirmed",
+        "topIndex": 13,
+        "cryScore": 0.11848958333333333
+      },
+      "frames": [
+        {
+          "babyCry": 0.0078125,
+          "top": [
+            {
+              "index": 13,
+              "label": "Laughter",
+              "score": 0.19921875
+            },
+            {
+              "index": 17,
+              "label": "Belly laugh",
+              "score": 0.1484375
+            },
+            {
+              "index": 14,
+              "label": "Baby laughter",
+              "score": 0.1484375
+            }
+          ]
+        },
+        {
+          "babyCry": 0.1484375,
+          "top": [
+            {
+              "index": 80,
+              "label": "Caterwaul",
+              "score": 0.5
+            },
+            {
+              "index": 76,
+              "label": "Cat",
+              "score": 0.4140625
+            },
+            {
+              "index": 78,
+              "label": "Meow",
+              "score": 0.33203125
+            }
+          ]
+        },
+        {
+          "babyCry": 0.19921875,
+          "top": [
+            {
+              "index": 13,
+              "label": "Laughter",
+              "score": 0.33203125
+            },
+            {
+              "index": 19,
+              "label": "Crying, sobbing",
+              "score": 0.26171875
+            },
+            {
+              "index": 14,
+              "label": "Baby laughter",
+              "score": 0.26171875
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "crying_baby-1-211527-A-20-0.f32",
+      "sha256": "ee686aa09156f0a943ec8eac6f5555ec8afba60738b3eb1f82c84349716a0c3f",
+      "preprocessing": "ready",
+      "inputDb": -21,
+      "gainDb": -2,
+      "decision": {
+        "status": "not_cry",
+        "topIndex": 67,
+        "cryScore": 0.016927083333333332
+      },
+      "frames": [
+        {
+          "babyCry": 0.03125,
+          "top": [
+            {
+              "index": 68,
+              "label": "Domestic animals, pets",
+              "score": 0.33203125
+            },
+            {
+              "index": 69,
+              "label": "Dog",
+              "score": 0.26171875
+            },
+            {
+              "index": 67,
+              "label": "Animal",
+              "score": 0.1484375
+            }
+          ]
+        },
+        {
+          "babyCry": 0.015625,
+          "top": [
+            {
+              "index": 68,
+              "label": "Domestic animals, pets",
+              "score": 0.5859375
+            },
+            {
+              "index": 67,
+              "label": "Animal",
+              "score": 0.5
+            },
+            {
+              "index": 76,
+              "label": "Cat",
+              "score": 0.33203125
+            }
+          ]
+        },
+        {
+          "babyCry": 0.00390625,
+          "top": [
+            {
+              "index": 90,
+              "label": "Goat",
+              "score": 0.8515625
+            },
+            {
+              "index": 67,
+              "label": "Animal",
+              "score": 0.80078125
+            },
+            {
+              "index": 81,
+              "label": "Livestock, farm animals, working animals",
+              "score": 0.73828125
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "crying_baby-1-211527-A-20-1.5.f32",
+      "sha256": "acad890cbb18a4b80786feac9d1f7de7f64d384b2f51ba7bf30d7356b03c77e3",
+      "preprocessing": "ready",
+      "inputDb": -21,
+      "gainDb": -2,
+      "decision": {
+        "status": "cry",
+        "topIndex": 19,
+        "cryScore": 0.28125
+      },
+      "frames": [
+        {
+          "babyCry": 0.01171875,
+          "top": [
+            {
+              "index": 90,
+              "label": "Goat",
+              "score": 0.4140625
+            },
+            {
+              "index": 81,
+              "label": "Livestock, farm animals, working animals",
+              "score": 0.4140625
+            },
+            {
+              "index": 67,
+              "label": "Animal",
+              "score": 0.4140625
+            }
+          ]
+        },
+        {
+          "babyCry": 0.03125,
+          "top": [
+            {
+              "index": 24,
+              "label": "Singing",
+              "score": 0.33203125
+            },
+            {
+              "index": 29,
+              "label": "Child singing",
+              "score": 0.26171875
+            },
+            {
+              "index": 500,
+              "label": "Inside, small room",
+              "score": 0.05859375
+            }
+          ]
+        },
+        {
+          "babyCry": 0.80078125,
+          "top": [
+            {
+              "index": 19,
+              "label": "Crying, sobbing",
+              "score": 0.91796875
+            },
+            {
+              "index": 20,
+              "label": "Baby cry, infant cry",
+              "score": 0.80078125
+            },
+            {
+              "index": 21,
+              "label": "Whimper",
+              "score": 0.33203125
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "dog-1-100032-A-0-0.f32",
+      "sha256": "a0adf6fa1462135dc9c4e0cbd758f8ef93000fe124daed3aba4add27a7504724",
+      "preprocessing": "ready",
+      "inputDb": -26,
+      "gainDb": -1,
+      "decision": {
+        "status": "not_cry",
+        "topIndex": 494,
+        "cryScore": 0
+      },
+      "frames": [
+        {
+          "babyCry": 0,
+          "top": [
+            {
+              "index": 494,
+              "label": "Silence",
+              "score": 0.80078125
+            },
+            {
+              "index": 498,
+              "label": "Sound effect",
+              "score": 0.0078125
+            },
+            {
+              "index": 132,
+              "label": "Music",
+              "score": 0.00390625
+            }
+          ]
+        },
+        {
+          "babyCry": 0,
+          "top": [
+            {
+              "index": 494,
+              "label": "Silence",
+              "score": 0.80078125
+            },
+            {
+              "index": 498,
+              "label": "Sound effect",
+              "score": 0.0078125
+            },
+            {
+              "index": 132,
+              "label": "Music",
+              "score": 0.00390625
+            }
+          ]
+        },
+        {
+          "babyCry": 0,
+          "top": [
+            {
+              "index": 67,
+              "label": "Animal",
+              "score": 0.8515625
+            },
+            {
+              "index": 69,
+              "label": "Dog",
+              "score": 0.8515625
+            },
+            {
+              "index": 68,
+              "label": "Domestic animals, pets",
+              "score": 0.8515625
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "dog-1-100032-A-0-1.5.f32",
+      "sha256": "4f6fea9dc16219853a59a504e480ec50d597fdf50da0f1fa0c2ce2768fb46d0e",
+      "preprocessing": "ready",
+      "inputDb": -26,
+      "gainDb": -1,
+      "decision": {
+        "status": "not_cry",
+        "topIndex": 494,
+        "cryScore": 0
+      },
+      "frames": [
+        {
+          "babyCry": 0,
+          "top": [
+            {
+              "index": 67,
+              "label": "Animal",
+              "score": 0.80078125
+            },
+            {
+              "index": 69,
+              "label": "Dog",
+              "score": 0.80078125
+            },
+            {
+              "index": 68,
+              "label": "Domestic animals, pets",
+              "score": 0.73828125
+            }
+          ]
+        },
+        {
+          "babyCry": 0,
+          "top": [
+            {
+              "index": 494,
+              "label": "Silence",
+              "score": 0.08203125
+            },
+            {
+              "index": 498,
+              "label": "Sound effect",
+              "score": 0.05859375
+            },
+            {
+              "index": 132,
+              "label": "Music",
+              "score": 0.03125
+            }
+          ]
+        },
+        {
+          "babyCry": 0,
+          "top": [
+            {
+              "index": 494,
+              "label": "Silence",
+              "score": 0.80078125
+            },
+            {
+              "index": 498,
+              "label": "Sound effect",
+              "score": 0.0078125
+            },
+            {
+              "index": 132,
+              "label": "Music",
+              "score": 0.00390625
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "vacuum_cleaner-1-100210-A-36-0.f32",
+      "sha256": "50d8a202ef37b48c44b5b83bd69f2537b01546b35cabb4fed5472f9b33d85c6c",
+      "preprocessing": "noise",
+      "inputDb": -12,
+      "gainDb": 0
+    },
+    {
+      "file": "vacuum_cleaner-1-100210-A-36-1.5.f32",
+      "sha256": "079751c117b464510b3177135c2da7948b26c11c38a2ab1a4d2f4d7746541c9b",
+      "preprocessing": "noise",
+      "inputDb": -11,
+      "gainDb": 0
+    }
+  ]
+}

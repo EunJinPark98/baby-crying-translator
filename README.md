@@ -38,11 +38,12 @@ cap to 36 dB and lowers the input gate from -50 to -65 dBFS. This is a frontend
 adaptation, not a new model or proven accuracy improvement. Noise/clipping gates remain.
 
 The application marks results uncertain below a top score of .55 or a top-two margin of .15.
-Uncertain windows do not publish a new reason. Two consecutive qualified windows
+Uncertain windows do not publish a new reason. Two qualified windows with adjacent capture sequence numbers
 within 10 seconds must agree on the top label before replacing the last candidate.
 Overlapping windows are correlated: this reduces flicker, not proven model error.
 Silence, noise and ambiguity reset pending agreement but preserve the last displayed
-candidate and its original timestamp. Stopping also retains it; a new session,
+candidate and its original audio capture timestamp. Results older than 10 seconds
+are discarded without clearing the last candidate. Stopping also retains it; a new session,
 demo or page reload clears it. Current listening status is shown separately.
 These are conservative UI heuristics, not calibrated probabilities. Scores are
 not displayed as confidence or accuracy. There is no sleepiness class.
@@ -76,7 +77,7 @@ automatically upload to GitHub.
 
 ## Latest validation
 
-See [2026-10-02 validation](docs/VALIDATION.md) for recorded cry/non-cry smoke cases,
+See [2026-10-03 validation](docs/VALIDATION.md) for recorded cry/non-cry smoke cases,
 missed crying, reproducibility hashes and browser QA limits. No accuracy improvement is claimed.
 
 ## Runtime improvements — 2026-10-02
@@ -90,3 +91,11 @@ The waveform reuses one 2,048-float buffer and draws at most 20fps. Gain changes
 no longer restart the Worker, and responses from the previous gain setting are discarded.
 Actual mobile latency/battery improvement has not been measured.
 No detection thresholds, model scores, or model weights were changed.
+
+## Detector diagnostics
+
+`node scripts/diagnose-detector.cjs /absolute/fixtures /absolute/report.json`
+reads 16kHz mono Float32, 3.072-second local clips and records preprocessor decisions,
+per-frame YAMNet top classes, cry scores and hashes. It does not upload/save audio.
+The committed October 3 report reproduces model confusion with speech, laughter
+and animal classes; it is not evidence for lowering the gate or calibrated accuracy.
