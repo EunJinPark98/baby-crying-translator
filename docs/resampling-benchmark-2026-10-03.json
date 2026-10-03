@@ -1,0 +1,27 @@
+{
+  "environment": "Node v24.19.0 Linux development container; not a mobile benchmark",
+  "windowSeconds": 3.072,
+  "rows": [
+    {
+      "rate": 44100,
+      "medianMs": 12.257160999999996,
+      "legacyAliasedRms": 0.05569924298089814,
+      "filteredAliasedRms": 8.497828061287747e-8,
+      "attenuationDb": -116.33082705964567
+    },
+    {
+      "rate": 48000,
+      "medianMs": 11.983267000000012,
+      "legacyAliasedRms": 0.07071067917231924,
+      "filteredAliasedRms": 1.5443276421233703e-7,
+      "attenuationDb": -113.21491127260309
+    },
+    {
+      "rate": 96000,
+      "medianMs": 23.396170000000097,
+      "legacyAliasedRms": 0.07071067917231924,
+      "filteredAliasedRms": 1.5391508632160566e-7,
+      "attenuationDb": -113.24407636808745
+    }
+  ]
+}

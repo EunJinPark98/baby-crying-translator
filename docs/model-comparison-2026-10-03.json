@@ -1,0 +1,943 @@
+{
+  "dataset": {
+    "revision": "33c8ce9eb2cf0b1c2f8bcf322eb349b6be34dbb6",
+    "selection": "All 40 crying_baby; first eight sorted filenames from nine distractor classes, selected before inference. Two overlapping windows per recording.",
+    "recordings": 112,
+    "overlappingWindows": 224,
+    "offsetSeconds": [
+      0,
+      1.5
+    ],
+    "durationSeconds": 3.072,
+    "rate": 16000
+  },
+  "limitations": [
+    "Selected ESC-50 subset; overlapping windows are correlated.",
+    "Training overlap is unknown. No infant identity separation or reason ground truth.",
+    "No thresholds tuned. Counts are not general real-world accuracy.",
+    "CNN frontend reproduction is provisional; its numbers are not valid evidence of model quality."
+  ],
+  "decision": "Keep existing production detector; full model adds false positives and download size, CNN parity unverified.",
+  "current": {
+    "sha256": "4d8b4a53282dc83ef04e3e7dbc4fbc98082e34e44ed798e16c3a0cdd4c584faf",
+    "cryDetected": 53,
+    "cryWindows": 80,
+    "falseCry": 0,
+    "nonCryWindows": 144
+  },
+  "fullYamnet": {
+    "sha256": "141fba1cdaae842c816f28edc4937e8b4f0af4c8df21862ccc6b52dc567993c3",
+    "bytes": 16096668,
+    "cry": {
+      "windows": 80,
+      "cryPredictions": 57
+    },
+    "noncry": {
+      "windows": 144,
+      "cryPredictions": 3
+    },
+    "falsePositiveCases": [
+      {
+        "file": "cat-1-56380-A-5-0.f32",
+        "preprocessing": "ready",
+        "decision": "cry",
+        "cryScore": 0.4463953673839569,
+        "peak": 0.847319483757019,
+        "inferenceMs": 4.495883999993566
+      },
+      {
+        "file": "cat-1-56380-A-5-1.5.f32",
+        "preprocessing": "ready",
+        "decision": "cry",
+        "cryScore": 0.41855621337890625,
+        "peak": 0.5985668897628784,
+        "inferenceMs": 4.47137699995892
+      },
+      {
+        "file": "cat-1-56380-B-5-1.5.f32",
+        "preprocessing": "ready",
+        "decision": "cry",
+        "cryScore": 0.2629029154777527,
+        "peak": 0.7882726788520813,
+        "inferenceMs": 4.683599000031791
+      }
+    ]
+  },
+  "cnn": {
+    "revision": "4495440c7aeb0b04f12b9b991df5d92c062f92a0",
+    "sha256": "654dd85892bc3f0eccfecdfa8c2466a1b42c22631fbf90629355bf72bf74526b",
+    "status": "RESEARCH_ONLY_NOT_PARITY_VERIFIED",
+    "frontendAssumptions": [
+      "Uncentered 400-sample Hann STFT, 160 hop, FFT512",
+      "FFT divided by window sum before power",
+      "First-order numpy gradient, one-sided edges",
+      "Per-channel/per-mel normalization from published metadata",
+      "Application audio gate matches current boosted mode"
+    ],
+    "cryPredictions": 0,
+    "cryWindows": 80,
+    "nonCryPredictionsAsCry": 3,
+    "nonCryWindows": 144
+  },
+  "currentMisses": [
+    {
+      "file": "crying_baby-1-187207-A-20-0.f32",
+      "sha256": "cb60b31f8285d867000bd8e80fdbabda1de1f414e5123ab3f9f5cadeef8254f1",
+      "status": "not_cry",
+      "cryScore": 0.020833333333333332,
+      "topClasses": [
+        "Speech",
+        "Speech",
+        "Speech"
+      ]
+    },
+    {
+      "file": "crying_baby-1-187207-A-20-1.5.f32",
+      "sha256": "a4c3d8d53899dc9b065f49af8b432257c49f4a004aec4b0a8c0b08dadf6e2766",
+      "status": "unconfirmed",
+      "cryScore": 0.13932291666666666,
+      "topClasses": [
+        "Giggle",
+        "Caterwaul",
+        "Crying, sobbing"
+      ]
+    },
+    {
+      "file": "crying_baby-1-211527-A-20-0.f32",
+      "sha256": "ad51952202197509b9ca1c9318e8a3c3061942e773bf5accd23d8fc3842aaa2c",
+      "status": "not_cry",
+      "cryScore": 0.028645833333333332,
+      "topClasses": [
+        "Domestic animals, pets",
+        "Animal",
+        "Goat"
+      ]
+    },
+    {
+      "file": "crying_baby-1-211527-A-20-1.5.f32",
+      "sha256": "b9a8991ceb6a22ed1349356bddf3e59148511219e75a1d2ef5effde8c797cf7b",
+      "status": "unconfirmed",
+      "cryScore": 0.21484375,
+      "topClasses": [
+        "Goat",
+        "Child singing",
+        "Crying, sobbing"
+      ]
+    },
+    {
+      "file": "crying_baby-1-211527-B-20-0.f32",
+      "sha256": "2996ae826605fdb290d9eed4aabb7fcd495edeb27dfea79aa6ee49b78798c47c",
+      "status": "not_cry",
+      "cryScore": 0.03515625,
+      "topClasses": [
+        "Speech",
+        "Laughter",
+        "Laughter"
+      ]
+    },
+    {
+      "file": "crying_baby-1-211527-B-20-1.5.f32",
+      "sha256": "477d94609fe4b52add59fbe26d6d52d5faefeaa9763eb5182c6b8155e97716bf",
+      "status": "not_cry",
+      "cryScore": 0.033854166666666664,
+      "topClasses": [
+        "Crying, sobbing",
+        "Laughter",
+        "Laughter"
+      ]
+    },
+    {
+      "file": "crying_baby-1-211527-C-20-1.5.f32",
+      "sha256": "baa0b1c12a592651a4233f93511cd8ed4c9ba1769c00044ade9a3b7a1dcfd2a7",
+      "status": "unconfirmed",
+      "cryScore": 0.265625,
+      "topClasses": [
+        "Crying, sobbing",
+        "Singing",
+        "Crying, sobbing"
+      ]
+    },
+    {
+      "file": "crying_baby-1-22694-B-20-1.5.f32",
+      "sha256": "816f7ed9a0c3e3d120345ddba635d7a01284404f1f8caab3265cf3769ef5f422",
+      "status": "unconfirmed",
+      "cryScore": 0.16796875,
+      "topClasses": [
+        "Speech",
+        "Beatboxing",
+        "Crying, sobbing"
+      ]
+    },
+    {
+      "file": "crying_baby-2-50665-A-20-1.5.f32",
+      "sha256": "f73e759c14ee186033216d3b5fe32612ebfd9622213cddc9fa6fa51db0dff953",
+      "status": "unconfirmed",
+      "cryScore": 0.15234375,
+      "topClasses": [
+        "Crying, sobbing",
+        "Child speech, kid speaking",
+        "Silence"
+      ]
+    },
+    {
+      "file": "crying_baby-2-66637-A-20-1.5.f32",
+      "sha256": "130688e40df825beacaff3c80cd16dbbeaf8235bbc7873b18284791e585022b8",
+      "status": "unconfirmed",
+      "cryScore": 0.234375,
+      "topClasses": [
+        "Laughter",
+        "Crying, sobbing",
+        "Laughter"
+      ]
+    },
+    {
+      "file": "crying_baby-2-66637-B-20-0.f32",
+      "sha256": "53f76908c0a1d1e7ae579b563436ce1bd5b39f1c6dc12846d066acd26f4835a9",
+      "status": "unconfirmed",
+      "cryScore": 0.078125,
+      "topClasses": [
+        "Animal",
+        "Domestic animals, pets",
+        "Babbling"
+      ]
+    },
+    {
+      "file": "crying_baby-3-152007-A-20-1.5.f32",
+      "sha256": "fe48bf542ff27b3ad48a58c1fba6f4e75e69a249555150793745b70cf9224a36",
+      "status": "unconfirmed",
+      "cryScore": 0.17317708333333334,
+      "topClasses": [
+        "Crying, sobbing",
+        "Screaming",
+        "Crying, sobbing"
+      ]
+    },
+    {
+      "file": "crying_baby-3-152007-C-20-0.f32",
+      "sha256": "47d26a307166fb3a2c9214264fb1f6c4e4f5878d3e65fd8e19d2a9ecc365ad81",
+      "status": "unconfirmed",
+      "cryScore": 0.18489583333333334,
+      "topClasses": [
+        "Crying, sobbing",
+        "Wail, moan",
+        "Sneeze"
+      ]
+    },
+    {
+      "file": "crying_baby-4-185575-B-20-0.f32",
+      "sha256": "b539d9c66bfba2db6311bb277c62f1da32cb536d2bd0f68e9737cee3b113740c",
+      "status": "unconfirmed",
+      "cryScore": 0.15234375,
+      "topClasses": [
+        "Crying, sobbing",
+        "Domestic animals, pets",
+        "Dog"
+      ]
+    },
+    {
+      "file": "crying_baby-4-185575-B-20-1.5.f32",
+      "sha256": "a1cb589d42e78d50e16d891300c31c3751125ccbf6fd191660dcf7681238f0bd",
+      "status": "unconfirmed",
+      "cryScore": 0.2903645833333333,
+      "topClasses": [
+        "Dog",
+        "Crying, sobbing",
+        "Babbling"
+      ]
+    },
+    {
+      "file": "crying_baby-4-185575-C-20-0.f32",
+      "sha256": "d9ea25f33a0c5cf7e835724461ea52709a368d60eaaff12e21711f88086a0f84",
+      "status": "unconfirmed",
+      "cryScore": 0.11328125,
+      "topClasses": [
+        "Babbling",
+        "Laughter",
+        "Babbling"
+      ]
+    },
+    {
+      "file": "crying_baby-4-185575-C-20-1.5.f32",
+      "sha256": "66031a8c28828a60b1ab5af8791f7e88df7add3493eeabdf5223a18923663d45",
+      "status": "unconfirmed",
+      "cryScore": 0.2721354166666667,
+      "topClasses": [
+        "Crying, sobbing",
+        "Crying, sobbing",
+        "Laughter"
+      ]
+    },
+    {
+      "file": "crying_baby-4-59579-B-20-0.f32",
+      "sha256": "f25f1144fb47c8cabef4af69344fe14d87f9f94808ee573f656e76db13b9c7d8",
+      "status": "unconfirmed",
+      "cryScore": 0.2669270833333333,
+      "topClasses": [
+        "Crying, sobbing",
+        "Laughter",
+        "Laughter"
+      ]
+    },
+    {
+      "file": "crying_baby-4-59579-B-20-1.5.f32",
+      "sha256": "4410083cab9e0f18d162b4c24bdb7dc1c0b4cddcec728785ad9015ca49e395ef",
+      "status": "not_cry",
+      "cryScore": 0.010416666666666666,
+      "topClasses": [
+        "Laughter",
+        "Silence",
+        "Silence"
+      ]
+    },
+    {
+      "file": "crying_baby-5-198411-A-20-1.5.f32",
+      "sha256": "dad7809b43dfe46e47d663eff2e66f82bb3ad8c3de61a6d6d5ce8e514bd7a33d",
+      "status": "unconfirmed",
+      "cryScore": 0.17838541666666666,
+      "topClasses": [
+        "Crying, sobbing",
+        "Laughter",
+        "Pig"
+      ]
+    },
+    {
+      "file": "crying_baby-5-198411-B-20-0.f32",
+      "sha256": "b7b3d65319c8774837d8317c58c6bed3ba586de0b735d72dd0950f7f922613f2",
+      "status": "not_cry",
+      "cryScore": 0.040364583333333336,
+      "topClasses": [
+        "Laughter",
+        "Bathtub (filling or washing)",
+        "Laughter"
+      ]
+    },
+    {
+      "file": "crying_baby-5-198411-B-20-1.5.f32",
+      "sha256": "1e8a80fd38998431cc68e940766be33b1a5d4f3477c9fc985e39740b37937f52",
+      "status": "not_cry",
+      "cryScore": 0.01953125,
+      "topClasses": [
+        "Laughter",
+        "Speech",
+        "Laughter"
+      ]
+    },
+    {
+      "file": "crying_baby-5-198411-D-20-0.f32",
+      "sha256": "040c3d6db8957adef00632084602f37e586f84c1d3fb93f3832b6af06d1f8445",
+      "status": "unconfirmed",
+      "cryScore": 0.2591145833333333,
+      "topClasses": [
+        "Laughter",
+        "Crying, sobbing",
+        "Chicken, rooster"
+      ]
+    },
+    {
+      "file": "crying_baby-5-198411-D-20-1.5.f32",
+      "sha256": "cafc5caa7898847c605c59bcd2c0ab3f49f258f32b3b5e579e23be6d4fbf674e",
+      "status": "unconfirmed",
+      "cryScore": 0.140625,
+      "topClasses": [
+        "Chicken, rooster",
+        "Speech",
+        "Laughter"
+      ]
+    },
+    {
+      "file": "crying_baby-5-198411-F-20-0.f32",
+      "sha256": "4ef1b21690f49e4806830b63970f863b8bb91df2f819f743e2ad0d1cdcab78f8",
+      "status": "not_cry",
+      "cryScore": 0.036458333333333336,
+      "topClasses": [
+        "Screaming",
+        "Whistle",
+        "Laughter"
+      ]
+    },
+    {
+      "file": "crying_baby-5-198411-F-20-1.5.f32",
+      "sha256": "5e1dcc579d0be46eb393310aa520756e09497b10a83faffd86214f577ba460f4",
+      "status": "unconfirmed",
+      "cryScore": 0.16796875,
+      "topClasses": [
+        "Screaming",
+        "Crying, sobbing",
+        "Crying, sobbing"
+      ]
+    },
+    {
+      "file": "crying_baby-5-198411-G-20-0.f32",
+      "sha256": "87ed76f6abc9c6993722f2eb3ab1583bd83ae09a0d8575efdbc1fdd5e7130ce5",
+      "status": "unconfirmed",
+      "cryScore": 0.2513020833333333,
+      "topClasses": [
+        "Laughter",
+        "Laughter",
+        "Crying, sobbing"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "filename": "1-1791-A-26.wav",
+      "category": "laughing",
+      "sha256": "dc6cd665f3d20eed6089d9593a2b776104d8671c57ce6c48e6be030c75a53643"
+    },
+    {
+      "filename": "1-30039-A-26.wav",
+      "category": "laughing",
+      "sha256": "dcb1b2c6686b090bf63775eb79a64d96c243987e6ae66cbb96a4a66610b37809"
+    },
+    {
+      "filename": "1-30043-A-26.wav",
+      "category": "laughing",
+      "sha256": "1f7b0a945875fa57a2c213e8e09afb4898675f87aafd59b2bdbfcaae9f750723"
+    },
+    {
+      "filename": "1-33658-A-26.wav",
+      "category": "laughing",
+      "sha256": "372c161a4c9720a4ff4f14499dcfe763de12b6ab428c430dbed22bb46d1e1528"
+    },
+    {
+      "filename": "1-36164-A-26.wav",
+      "category": "laughing",
+      "sha256": "1e458a12c75bae2b27e719449f4a8036e315da58c4c1871318f39170039bc193"
+    },
+    {
+      "filename": "1-36164-B-26.wav",
+      "category": "laughing",
+      "sha256": "c4ae2f7010e965c71e0564f4300c3b24b3ea32be65ece7ca885c95b8883e6cc9"
+    },
+    {
+      "filename": "1-72695-A-26.wav",
+      "category": "laughing",
+      "sha256": "00e40dabc61f55f7b41edb89a6690f1dc12c69321eb14c7272fb57d286f97e9a"
+    },
+    {
+      "filename": "1-73123-A-26.wav",
+      "category": "laughing",
+      "sha256": "8057fd399edeefc25205d97ef8577693154507e9be4fcd7c4663eb14a6ee59f7"
+    },
+    {
+      "filename": "1-34094-A-5.wav",
+      "category": "cat",
+      "sha256": "ceddf296bcdda3996d35d3f4c292c338050bcb4c5a05a96ca22a69d33e33e4de"
+    },
+    {
+      "filename": "1-34094-B-5.wav",
+      "category": "cat",
+      "sha256": "43814c96e62a5c2fbf14b84828cc929e381e53c0add7c1e8211d212e1da97734"
+    },
+    {
+      "filename": "1-47819-A-5.wav",
+      "category": "cat",
+      "sha256": "2abe50ef7597a38f17d49076a3800690355a8f70ab2952298dd0277c9d4a6839"
+    },
+    {
+      "filename": "1-47819-B-5.wav",
+      "category": "cat",
+      "sha256": "05884970b04e454d33b0ee8d5a6f185b941f38c466c19439f0b4124d262cc17e"
+    },
+    {
+      "filename": "1-47819-C-5.wav",
+      "category": "cat",
+      "sha256": "f8223f6d3ffcf23490c88dba5a298bfb48a96f58f4b9a5bfb141eb92bbe826b5"
+    },
+    {
+      "filename": "1-56380-A-5.wav",
+      "category": "cat",
+      "sha256": "41b7fa6bca14e3f8571c238ddc06256c57c377ca510caeab136b9145294a416a"
+    },
+    {
+      "filename": "1-56380-B-5.wav",
+      "category": "cat",
+      "sha256": "c4f5bc0cf370ff7cb75ef9be003e0b0ee867be6c58e81c1d47cad0018e1b5bce"
+    },
+    {
+      "filename": "1-79113-A-5.wav",
+      "category": "cat",
+      "sha256": "4c1b3bc531fb57cbe6d23a111d35878579070fafad0a1508b954cf9c619af647"
+    },
+    {
+      "filename": "1-100032-A-0.wav",
+      "category": "dog",
+      "sha256": "f40a849a2375c8c63312a73dd2dd6c74007301fcc21b4be2ece29a642831e3d8"
+    },
+    {
+      "filename": "1-110389-A-0.wav",
+      "category": "dog",
+      "sha256": "4a18f3f834eb184b9f02595ac74c7de37ef8048a3da92f58f27018fec580b36a"
+    },
+    {
+      "filename": "1-30226-A-0.wav",
+      "category": "dog",
+      "sha256": "ca2626d2b49c7c20a3e0f9f8d7aa56f4497643c6bc264ff37764392be2b15753"
+    },
+    {
+      "filename": "1-30344-A-0.wav",
+      "category": "dog",
+      "sha256": "52a876cff473fe9b6deb4feea9545a2b976e63e03744921afc72f9800758ce30"
+    },
+    {
+      "filename": "1-32318-A-0.wav",
+      "category": "dog",
+      "sha256": "0e96f0bab8bbba81c98a8d7741cf258c8381c6481bac36961b8603a600a6c321"
+    },
+    {
+      "filename": "1-59513-A-0.wav",
+      "category": "dog",
+      "sha256": "b573fcbb4d3a8a05a857dc1ffdb09c687253ff3a03baa326460e291ce4cbfee7"
+    },
+    {
+      "filename": "1-85362-A-0.wav",
+      "category": "dog",
+      "sha256": "2f7742933d677b0dc8d77b802e90ee0fb94b5828183ca96f7a8dd8d24ab57b7b"
+    },
+    {
+      "filename": "1-97392-A-0.wav",
+      "category": "dog",
+      "sha256": "9ec2eb304d2a1ab3a50150a2a558dce0771e4ffc920d074e107fd76cb7b5d28c"
+    },
+    {
+      "filename": "1-19111-A-24.wav",
+      "category": "coughing",
+      "sha256": "ab2afe6d0ee0de5edc1f0107448077919c6ac94dcf59243497e6fcb333685438"
+    },
+    {
+      "filename": "1-19118-A-24.wav",
+      "category": "coughing",
+      "sha256": "4fb6197f72791e50c465de8f1f715a7a3f93f7afab62dfa130f28d500303d8d9"
+    },
+    {
+      "filename": "1-30830-A-24.wav",
+      "category": "coughing",
+      "sha256": "e0374e3191067ad9a63df3ae9157e0ca44a36f4f1fa7586982609565683f6a13"
+    },
+    {
+      "filename": "1-52266-A-24.wav",
+      "category": "coughing",
+      "sha256": "dbf47513fb47c7cac8eb44110871b57ac9c51daf874d9185250fea1081e8917f"
+    },
+    {
+      "filename": "1-52323-A-24.wav",
+      "category": "coughing",
+      "sha256": "74d2b6a06d461e16b869c4ed5d3a83c5af698fe3650f1ac395976de974638d80"
+    },
+    {
+      "filename": "1-53663-A-24.wav",
+      "category": "coughing",
+      "sha256": "325713c6d3370316b849ad7398d9a9c744e3a6a0ce31a7b5360c0d18c7a03b79"
+    },
+    {
+      "filename": "1-58792-A-24.wav",
+      "category": "coughing",
+      "sha256": "ef5ceff5e8ff5ff73d3d35f7a6bf677b9ac52a89c0ccefe8a891bca52a6c80a9"
+    },
+    {
+      "filename": "1-63679-A-24.wav",
+      "category": "coughing",
+      "sha256": "d6905ec0b2937aae9bf3a2bcb35950d2d5dec0c7dcd8414af9a45f3116d3272a"
+    },
+    {
+      "filename": "1-18631-A-23.wav",
+      "category": "breathing",
+      "sha256": "cdbd39617f2955d86ec18a4032ecd9090369c23f3d8c6d650f62e9e1ee19ea6a"
+    },
+    {
+      "filename": "1-30709-A-23.wav",
+      "category": "breathing",
+      "sha256": "8b546dc3be7448c10a7fe8c5b0b48b556e860827e28d559c3a8ec19961e3cce3"
+    },
+    {
+      "filename": "1-30709-B-23.wav",
+      "category": "breathing",
+      "sha256": "b13bf95518ece537cd5f4dd564ded31ee66cdeae30af4cfebb88a8e5dedf6dfc"
+    },
+    {
+      "filename": "1-30709-C-23.wav",
+      "category": "breathing",
+      "sha256": "09c31e4f7330ce4a1068062af19ece5e8f1da7ec5105f8925a11a42cd6d6ca81"
+    },
+    {
+      "filename": "1-36393-A-23.wav",
+      "category": "breathing",
+      "sha256": "04c196b0fd72862bcf065328a3393dd7444c60caec87bc3d2053c6043075bd2b"
+    },
+    {
+      "filename": "1-36397-A-23.wav",
+      "category": "breathing",
+      "sha256": "b40c720b4a29a77650cb16bec19dcfdb05d8329b1d47781f0feb1349132dc5ce"
+    },
+    {
+      "filename": "1-36400-A-23.wav",
+      "category": "breathing",
+      "sha256": "8d867bd0d632be73c2b1101f41e12ff4157386075163924710f231599faab280"
+    },
+    {
+      "filename": "1-36402-A-23.wav",
+      "category": "breathing",
+      "sha256": "cfc297b839a7ee0518fd7cb1e9a0cc5cb2a293bea181bd89ea50eb65b09e3918"
+    },
+    {
+      "filename": "1-20545-A-28.wav",
+      "category": "snoring",
+      "sha256": "417d56b2057b5e2b4e73eeffbef13a333e788fce95e9622ddad47e1867886c27"
+    },
+    {
+      "filename": "1-27403-A-28.wav",
+      "category": "snoring",
+      "sha256": "e62c4f2f7500f59d40754fcdb7c953f5f2237a597a9f5be0de0343e859f4856b"
+    },
+    {
+      "filename": "1-27405-A-28.wav",
+      "category": "snoring",
+      "sha256": "4f097ec29f8432366d7209aa324e9f2ce31189242c511f3d30cd2c356e2bdecb"
+    },
+    {
+      "filename": "1-39937-A-28.wav",
+      "category": "snoring",
+      "sha256": "184b75fef70747b549f033eef3034998c21a725a6176ff3b861274e85aaa152b"
+    },
+    {
+      "filename": "1-40621-A-28.wav",
+      "category": "snoring",
+      "sha256": "a18fcb73c72c1d08b3125ec4b3eff5957b2e4264c9ed7ab2783337a5d0a7722a"
+    },
+    {
+      "filename": "1-40967-A-28.wav",
+      "category": "snoring",
+      "sha256": "7e6a1cf20a1718876d267682930de4478199ef5cf6e790a5eab4d2dbda8b8c0f"
+    },
+    {
+      "filename": "1-47923-A-28.wav",
+      "category": "snoring",
+      "sha256": "7a7b0c062646ac6d2bda5aebb7e35f869f9d405e74286e84affdfeabe0343c97"
+    },
+    {
+      "filename": "1-53444-A-28.wav",
+      "category": "snoring",
+      "sha256": "b21b1fe023878bf47832f5b20d3dd58b6ba6ab0e785300a1388ca76847a524dc"
+    },
+    {
+      "filename": "1-13613-A-37.wav",
+      "category": "clock_alarm",
+      "sha256": "2e28b25e14611723cdcc0becfa36468a8d0329a0c141e4f1d894bd6bb5773f34"
+    },
+    {
+      "filename": "1-14262-A-37.wav",
+      "category": "clock_alarm",
+      "sha256": "220c3d127df2f0d8979a2edde5318aaaa3aed19d8c5d3b4a40d529f979bba453"
+    },
+    {
+      "filename": "1-34853-A-37.wav",
+      "category": "clock_alarm",
+      "sha256": "87c0ead33b915845a8d86437b78755278408aedf8ed19e4880674a3679122cf4"
+    },
+    {
+      "filename": "1-67033-A-37.wav",
+      "category": "clock_alarm",
+      "sha256": "e00a8c065c7797e35ac9857dfdd8ae4272a22cc1a41af0ed245068774a8b9cea"
+    },
+    {
+      "filename": "1-72195-A-37.wav",
+      "category": "clock_alarm",
+      "sha256": "d4bf2130de0d593abb7cd7c96867e4f26a3ae266cf07413a3a7804781d221d02"
+    },
+    {
+      "filename": "1-72195-B-37.wav",
+      "category": "clock_alarm",
+      "sha256": "e7aab3836068e1776bc2a16086b49e57046d728812b4ed9989053ebc705a4f7e"
+    },
+    {
+      "filename": "1-74517-A-37.wav",
+      "category": "clock_alarm",
+      "sha256": "119c27838962b7aee90e1d26fbad8a7da2977da8f788d79a1ada43d27f15e4aa"
+    },
+    {
+      "filename": "1-96890-A-37.wav",
+      "category": "clock_alarm",
+      "sha256": "48e8337f9d0df547ca9784597aea7f00d4ec3984ee5aa5894d21fed0f4f8a399"
+    },
+    {
+      "filename": "1-100210-A-36.wav",
+      "category": "vacuum_cleaner",
+      "sha256": "f97e97b0fe0afce323d858503b6fa3ffd6c8cb1162c43cf3b24461300fb9abf6"
+    },
+    {
+      "filename": "1-100210-B-36.wav",
+      "category": "vacuum_cleaner",
+      "sha256": "acfdccbb58647655b9b63ab5574c178783b969f56e05933f115ae4dd1878a524"
+    },
+    {
+      "filename": "1-19840-A-36.wav",
+      "category": "vacuum_cleaner",
+      "sha256": "d6d58e48005b976207cd6030de5d8976e9e7f4377eab86f790c5473c95ad2dd1"
+    },
+    {
+      "filename": "1-19872-A-36.wav",
+      "category": "vacuum_cleaner",
+      "sha256": "6f15bb8c669aaf930dfd44ef95920141a2b8d43148f7e29c0f1a7a52f91260d6"
+    },
+    {
+      "filename": "1-19872-B-36.wav",
+      "category": "vacuum_cleaner",
+      "sha256": "610ae9ac76627cf8c1d655190fffa635979a24d25c5925cbbcf1dc659e323146"
+    },
+    {
+      "filename": "1-46744-A-36.wav",
+      "category": "vacuum_cleaner",
+      "sha256": "2ce9931568a6e0ddf3cf840988ffd2af6fe3be62012a1f865e18180fb2b0f21e"
+    },
+    {
+      "filename": "1-60460-A-36.wav",
+      "category": "vacuum_cleaner",
+      "sha256": "b5be86f8883d3deb8ecde4d8bd18ca9264abebd2726439f06684028061ef5dd2"
+    },
+    {
+      "filename": "1-79236-A-36.wav",
+      "category": "vacuum_cleaner",
+      "sha256": "c2a7d2bc06b14b9e9cecaa1e67ab5c0b21e1c1caa9945b853d1b7c9009e3ae8b"
+    },
+    {
+      "filename": "1-21896-A-35.wav",
+      "category": "washing_machine",
+      "sha256": "1b4210c50a01cabab07065a112463fad4f82de60385ef9aaf6316afe7d4b976c"
+    },
+    {
+      "filename": "1-23996-A-35.wav",
+      "category": "washing_machine",
+      "sha256": "cbfd9239fcd7e10a936e6836bbcc8c5f391f89b6a1e12dfe159df717e2898657"
+    },
+    {
+      "filename": "1-23996-B-35.wav",
+      "category": "washing_machine",
+      "sha256": "ca674e8520adea211f45e60eb86ae13f1be91e976afb82427ad61cb814142a2f"
+    },
+    {
+      "filename": "1-27165-A-35.wav",
+      "category": "washing_machine",
+      "sha256": "e6cad0b77f3204159226c4b12003156401f284a32351b9eacd2051df7f6e8237"
+    },
+    {
+      "filename": "1-27166-A-35.wav",
+      "category": "washing_machine",
+      "sha256": "eb7e1055a911665a03ac65d7085798b77cfa3e0718c123f93e93b7b07ad34796"
+    },
+    {
+      "filename": "1-32373-A-35.wav",
+      "category": "washing_machine",
+      "sha256": "b80e92b0c3b019a593601686fb2475e51294dfd9b1a36a1f34ce4e5edd9d5b0a"
+    },
+    {
+      "filename": "1-32373-B-35.wav",
+      "category": "washing_machine",
+      "sha256": "d95a3f2c66f1f15f81c2526a3102ab0480aa012a538dcb95660df5e9055537c0"
+    },
+    {
+      "filename": "1-49098-A-35.wav",
+      "category": "washing_machine",
+      "sha256": "14c76b96653f5a54cc7615b05bc2bd942f09dbfeb6096c6de6649306bbd0c820"
+    },
+    {
+      "filename": "1-187207-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "ddf5bf45f73bc73d1838bf0cb6af530584f324aef513112ee15c210e83ecbd6b"
+    },
+    {
+      "filename": "1-211527-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "3cbcd59a0db21f0ed8c252c74ea1bc193117d2c13ed99821885c46c564010b3e"
+    },
+    {
+      "filename": "1-211527-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "935be6bfdd4e24f767f5af092bb88c9a6ac000b926f1fe9075b66ebed907c8c0"
+    },
+    {
+      "filename": "1-211527-C-20.wav",
+      "category": "crying_baby",
+      "sha256": "165fa383fbfd24ea4455a84802a78970f02c3461677c23fabecd647c3c675dbc"
+    },
+    {
+      "filename": "1-22694-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "e97893bf8a391f769576ee70497ba51640d3bc646cbf20e719f6d22cc033b2e3"
+    },
+    {
+      "filename": "1-22694-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "cf7f480ac6fe0f61ed436d230200ca160f0c936c70009f3622b71c432af8b5ce"
+    },
+    {
+      "filename": "1-60997-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "6e225fdade2a26e8477eab8f3d9058537cd919de78fd1a2dcb029dcc014ce744"
+    },
+    {
+      "filename": "1-60997-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "2de04b4d958ab53a2f66653f66bc640757bb07cacbb1a614c28777f505c9aa20"
+    },
+    {
+      "filename": "2-107351-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "f89a24c9494eab238d80013b9409e6da4058b8097c665a789e48de1aef1bcef5"
+    },
+    {
+      "filename": "2-107351-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "ebb3365010813cec4b951d1294d3376fc598116a1f86115a3e279ea013160a6a"
+    },
+    {
+      "filename": "2-151079-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "8a13243f77b12668061f6fb18e820d8398c75d35eca09f9640efdd9df6703499"
+    },
+    {
+      "filename": "2-50665-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "8179d295f531f165ee89e92c3fb9f496ca6e13cff1fae3bb76067ee84da49078"
+    },
+    {
+      "filename": "2-50666-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "1f15be2b6c7bc156ccb5174b205b03eace593d728ea227a889ecd17375d4f5ea"
+    },
+    {
+      "filename": "2-66637-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "7956582f54756ada936b22c5d2e810d7237ddc95897a1557a59417e3b1be0f99"
+    },
+    {
+      "filename": "2-66637-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "9ef70dfc68879c756405662282e61e32aa88b3716455b13205936c4f7a135bb8"
+    },
+    {
+      "filename": "2-80482-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "1bc0b84be46c90e74f19f4704f488cb17a4e34686fd76bc4454007f13bf64f33"
+    },
+    {
+      "filename": "3-151080-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "e673e80074c99c9a8426ff708ca40d5f7a146605cf7b1625532276a7b95fd801"
+    },
+    {
+      "filename": "3-151081-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "48a0009a2b2f7e97d19c020c1292e17ee0775dc7537bca3109c4128fb17ac7de"
+    },
+    {
+      "filename": "3-151081-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "922250bbeca13111c955a83958f013c3a50b48e240705c57a645faf8b47a35d6"
+    },
+    {
+      "filename": "3-152007-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "dff786672fb70a78c6ddcde9935d1327fcb6704251844753c3a28b73ad2eef44"
+    },
+    {
+      "filename": "3-152007-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "39f6c0417c9bc1154f1cc292a593a33caec51eb985482c89d57e5fede76cdb9f"
+    },
+    {
+      "filename": "3-152007-C-20.wav",
+      "category": "crying_baby",
+      "sha256": "ccd8f855a799a8d21f3234ba81cce8a4eccbbfdef8d141b938f2c5e0ea85aa44"
+    },
+    {
+      "filename": "3-152007-D-20.wav",
+      "category": "crying_baby",
+      "sha256": "c47feeedb4dbf4681b595318dfc3ca0aa555af0a2ef87022715c55ff47922999"
+    },
+    {
+      "filename": "3-152007-E-20.wav",
+      "category": "crying_baby",
+      "sha256": "2369f99bd8ec01a9eb92d1be9a418143ff6f2298791d7811b614ba6cf92ef420"
+    },
+    {
+      "filename": "4-167077-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "43a894a23a4a1bed053e2ca040f7029a5d9029269173d8bac1c650c52c03e937"
+    },
+    {
+      "filename": "4-167077-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "0dd0122251e1b989c8309596e92ea95d06989db8b37d28fee3c485842f9f0014"
+    },
+    {
+      "filename": "4-167077-C-20.wav",
+      "category": "crying_baby",
+      "sha256": "c9ec416d8fb525a66d084250b4fbbf041e8bd5f31cc1c7c809e381a45902cc06"
+    },
+    {
+      "filename": "4-185575-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "9f40eaeef4e23e134a64b010d8a42636c7a9337e066539ebb183117744745f48"
+    },
+    {
+      "filename": "4-185575-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "630641ffb71938bd943b0ac6c5c2523fea1d7aa1e34a93de6f7268183a25ee5a"
+    },
+    {
+      "filename": "4-185575-C-20.wav",
+      "category": "crying_baby",
+      "sha256": "7cdd46d701197c99ab637a10bc37e61a9859fd88218d339d4699a46f748c0200"
+    },
+    {
+      "filename": "4-59579-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "9c21cb5f694f7c375c0d9d33f2f618b58460b7d1b39681dd2d3fbb493f0b0052"
+    },
+    {
+      "filename": "4-59579-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "8129eb08025521fbb11f273c6c506ebed89becab8ccb31ec6c0954162b2242c1"
+    },
+    {
+      "filename": "5-151085-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "e46d87b3673136a4d97b42f0ac6411ed299075bb2c88d61f7c456c0afe6804db"
+    },
+    {
+      "filename": "5-198411-A-20.wav",
+      "category": "crying_baby",
+      "sha256": "efa9989fa053f1bcb7916965791c7bf55c05e4e5acf0bd6d61c649d833659494"
+    },
+    {
+      "filename": "5-198411-B-20.wav",
+      "category": "crying_baby",
+      "sha256": "0a322dd25c0a694b06732a57f9e153f4615679c02fd5ec274aedf0bee3102b7d"
+    },
+    {
+      "filename": "5-198411-C-20.wav",
+      "category": "crying_baby",
+      "sha256": "23cf024e102435298b16a8138129f411326a239a2486fc49ca61b4cc15f24875"
+    },
+    {
+      "filename": "5-198411-D-20.wav",
+      "category": "crying_baby",
+      "sha256": "ea7b47c6eb1383ec5b8ba4147aa63f7adaff0b218d02731e24bcb3903549abd9"
+    },
+    {
+      "filename": "5-198411-E-20.wav",
+      "category": "crying_baby",
+      "sha256": "d473b14efed04cdc8cfa37dff146f2d861e744414b86a8b113d42a506df598ad"
+    },
+    {
+      "filename": "5-198411-F-20.wav",
+      "category": "crying_baby",
+      "sha256": "c7a8af6048461639c8931e6c0622a79ccfde881ec5b0ce0c902cb446eb699ec1"
+    },
+    {
+      "filename": "5-198411-G-20.wav",
+      "category": "crying_baby",
+      "sha256": "a5172b7c92be5d7663f1e97b629dda2e9020ee4caf4b626db1b05817b1ee7f1c"
+    }
+  ]
+}

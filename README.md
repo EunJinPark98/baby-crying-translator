@@ -99,3 +99,15 @@ reads 16kHz mono Float32, 3.072-second local clips and records preprocessor deci
 per-frame YAMNet top classes, cry scores and hashes. It does not upload/save audio.
 The committed October 3 report reproduces model confusion with speech, laughter
 and animal classes; it is not evidence for lowering the gate or calibrated accuracy.
+
+## Expanded evaluation and camera resilience — 2026-10-03
+
+Camera hardware/constraint failures fall back to microphone-only input. A video
+autoplay rejection releases camera tracks and keeps audio analysis available.
+Permission denial does not silently trigger a second permission request.
+All captured samples are validated for finite values before downsampling.
+
+See `docs/MODEL_EVALUATION.md` for the 112-recording model comparison and exact
+reproduction commands. Experimental filtering is under `scripts/evaluation` and
+is **not imported by the production worker** because the measured detection result
+regressed on the selected dataset. Current production model and thresholds remain.
