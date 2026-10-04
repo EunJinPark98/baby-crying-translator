@@ -173,3 +173,33 @@ header { padding-top: max(20px, env(safe-area-inset-top)); }
   select { font-size: 16px; }
   .video-bottom span { font-size: 11px; }
 }
+
+/* Separate live observation from the retained historical candidate. */
+.intro { margin: 9px 0 0; color: var(--muted); font-size: 14px; }
+.live-observation { margin: 22px 0; padding: 18px; background: #f5f3f9; border-radius: 16px; }
+.eyebrow { font-size: 12px; font-weight: 600; color: #69617a; }
+#liveTitle { font-size: 17px; font-weight: 650; line-height: 1.5; margin: 8px 0 4px; }
+#liveBody { font-size: 13px; color: var(--muted); margin: 0; }
+.live-observation .model-line { padding: 10px 0 0; margin-top: 12px; border-top: 1px solid #e5dfed; border-radius: 0; background: transparent; font-size: 12px; }
+.candidate-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 24px 0 12px; }
+#retainedHint { font-size: 11px; color: #766339; padding: 4px 8px; background: #faf2df; border-radius: 6px; }
+.result h3 { margin-top: 0; }
+#resultBody { min-height: 0; margin-bottom: 12px; }
+.candidate-details { border-top: 1px solid var(--line); }
+.candidate-details summary { color: var(--muted); font-size: 12px; min-height: 44px; }
+.candidate-details .candidates { margin-top: 0; }
+.result-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 12px; }
+.result-actions .text-button { color: #55506d; }
+.dialog-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.dialog-heading h2 { font-size: 21px; line-height: 1.5; margin: 6px 0 0; }
+.dialog-close { min-height: 44px; min-width: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: white; font-size: 13px; flex: none; }
+.dialog-intro { margin: 16px 0 24px; }
+.trust-section { padding: 20px 0; border-top: 1px solid var(--line); }
+.trust-section h3 { margin: 0 0 10px; font-size: 16px; }
+.trust-section h3 small { display: inline-block; margin-left: 6px; font-size: 12px; color: var(--muted); font-weight: 400; }
+.trust-section p { margin: 10px 0; font-size: 14px; }
+.evidence-limit { background: #f8f4ec; border-radius: 12px; padding: 14px; }
+.evidence-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; text-underline-offset: 4px; }
+.technical-details { border-top: 1px solid var(--line); }
+.technical-details p { font-size: 13px; }
+@media (max-width: 760px) { .live-observation { padding: 16px; margin: 18px 0; } dialog { padding: 22px; } }

@@ -2,7 +2,7 @@ const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/st
 const noop=()=>{};
 function setup(){
  const els={},workers=[],events={},trackEvents={};let latestCapture,mediaResolve,mediaReject,mediaOptions;const timers=new Map();let timerId=0,stopped=0;
- const el=id=>els[id]??={textContent:'',value:'unknown',checked:false,style:{},hidden:false,clientWidth:500,clientHeight:60,children:[],replaceChildren(){this.children=[];},append(...children){this.children.push(...children);},play:async()=>{},getContext:()=>({setTransform:noop,clearRect:noop,beginPath:noop,moveTo:noop,lineTo:noop,stroke:noop}),showModal:noop,close:noop};
+ const el=id=>els[id]??={textContent:'',value:'unknown',checked:false,style:{},hidden:false,clientWidth:500,clientHeight:60,children:[],replaceChildren(){this.children=[];},append(...children){this.children.push(...children);},play:async()=>{},getContext:()=>({setTransform:noop,clearRect:noop,beginPath:noop,moveTo:noop,lineTo:noop,stroke:noop}),focus(){this.focused=true;},showModal(){this.open=true;},close(){this.open=false;}};
  class AC{constructor(){this.currentTime=3.072;this.audioWorklet={addModule:async()=>{}};this.destination={};}async resume(){}async close(){}addEventListener(){}createAnalyser(){return {fftSize:2048,getFloatTimeDomainData:noop};}createMediaStreamSource(){return{connect:noop,disconnect:noop};}}
  class Capture{constructor(){latestCapture=this;this.port={};}connect(){}disconnect(){this.disconnected=true;}}
  class Worker{constructor(){workers.push(this);this.sent=[];}postMessage(x){this.sent.push(x);}terminate(){this.terminated=true;}}
@@ -37,12 +37,17 @@ function setup(){
  const capturedAt=Date.UTC(2026,9,3,1,2,3);respond(strong,capturedAt);
  assert.equal(a.el('analysisMeta').textContent,'마지막 소리 수집 · '+new Date(capturedAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),'timestamp reflects capture rather than inference completion');
  assert.match(a.el('resultTitle').textContent,/배고픔 후보/);
+ assert.equal(a.el('liveTitle').textContent,'울음으로 감지했어요');
+ assert.equal(a.el('retainedHint').hidden,true,'fresh match is not marked as previous audio');
+ assert.equal(a.el('candidateLabel').textContent,'마지막 원인 후보');
  const title=a.el('resultTitle').textContent,stamp=a.el('analysisMeta').textContent;
  for(const status of ['quiet','not_cry','noise','clipped','cry_unconfirmed']){
    respond({status,soundIndex:0});
    assert.equal(a.el('resultTitle').textContent,title,status+' retains last result');
    assert.equal(a.el('analysisMeta').textContent,stamp,status+' retains actual timestamp');
    assert.equal(a.el('candidates').hidden,false);
+   assert.equal(a.el('retainedHint').hidden,false,status+' marks the retained candidate as historical');
+   assert.notEqual(a.el('liveTitle').textContent,'울음으로 감지했어요',status+' updates live observation independently');
  }
  respond({status:'classified',uncertain:true,ranked:[{label:'burping',score:.3},{label:'hungry',score:.29}]});
  assert.equal(a.el('resultTitle').textContent,title,'uncertainty retains previous candidate');
@@ -71,7 +76,7 @@ function setup(){
  a.run("modelError('연결 오류')");
  assert.equal(a.el('resultTitle').textContent,finalTitle,'error retains candidate');
  assert.equal(a.el('analysisMeta').textContent,savedTime,'error retains original timestamp');
- assert.equal(a.el('modelStatus').textContent,'연결 오류','error details stay visible');
+ assert.equal(a.el('modelStatus').textContent,'연결 오류','error details stay visible');assert.equal(a.el('liveTitle').textContent,'AI 분석이 중단됐어요');
  a.el('enableAI').checked=false;a.el('enableAI').onchange();
  assert.equal(a.el('analysisMeta').textContent,savedTime,'AI off retains timestamp');
  a.el('enableAI').checked=true;
@@ -83,7 +88,10 @@ function setup(){
  assert.equal(worker.terminated,true);assert.equal(a.el('candidates').hidden,false,'stop retains readable result');
  assert.equal(a.capture.port.onmessage,null);assert.match(a.el('modelStatus').textContent,/듣기 종료/);
  worker.onmessage({data:first});assert.equal(a.el('resultTitle').textContent,finalTitle,'ignore stale model result');
- const restart=a.el('empty').onclick();assert.equal(a.el('candidates').hidden,true,'new session resets last result');
+ assert.equal(a.el('liveTitle').textContent,'듣기를 마쳤어요');
+ a.el('checkContext').onclick();assert.equal(a.el('contextPanel').open,true);assert.equal(a.el('contextSummary').focused,true,'manual context receives focus');
+ a.el('verification').onclick();assert.equal(a.el('aboutDialog').open,true);a.el('closeAbout').onclick();assert.equal(a.el('aboutDialog').open,false);
+ const restart=a.el('empty').onclick();assert.equal(a.el('candidates').hidden,true,'new session resets last result');assert.equal(a.el('retainedHint').hidden,true);assert.equal(a.el('candidateDetails').hidden,true);assert.equal(a.el('resultTitle').textContent,'아직 후보가 없어요');
  await new Promise(setImmediate);a.flushMedia();await restart;a.run('stop()');
  const b=setup();const pending=b.el('empty').onclick();await new Promise(setImmediate);b.run('stop()');b.flushMedia();await pending;assert.equal(b.stopped,1,'late permission result releases tracks');assert.equal(b.workers.length,0);
  const mic=setup();const micStart=mic.el('audioOnly').onclick();await new Promise(setImmediate);assert.equal(mic.mediaOptions.video,false,'audio-only does not request camera');mic.flushMedia();await micStart;assert.equal(mic.el('switch').disabled,true);assert.equal(mic.el('cameraStatus').textContent,'마이크 켜짐');mic.run('stop()');

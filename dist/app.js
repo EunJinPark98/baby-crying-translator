@@ -5,16 +5,29 @@ let stream=null,ctx=null,source=null,analyser=null,capture=null,worker=null;
 let raf=0,timer=0,modelTimeout=0,analysisTimeout=0,running=false,preview=false,busy=false;
 let facing='environment',epoch=0,started=0,lastPaint=0,workerReady=false,analysisBusy=false,requestId=0,lastFrame=0,meterSamples=null,audioOnlySession=false;
 let lastResult=false,pendingCandidate=null,requestBoost=false,boostRevision=0,currentWindow=null;
-function resetResult(){lastResult=false;pendingCandidate=null;clearCandidates();}
+function resetResult(){lastResult=false;pendingCandidate=null;clearCandidates();$('candidateDetails').open=false;}
 const nextSteps={hungry:'마지막 수유 시간과 입을 오물거리는 신호를 함께 확인해 보세요.',burping:'수유 직후인지, 안아 주었을 때 편안해지는지 살펴보세요.',discomfort:'기저귀와 조이는 옷, 주변 온도를 확인해 보세요.',belly_pain:'몸을 웅크리거나 불편해하는 모습이 있는지 직접 살펴보세요.',lonely:'가까이에서 목소리를 들려주고 반응을 살펴보세요.',scared:'갑작스러운 소리나 밝은 빛이 있었는지 확인해 보세요.'};
 const labelNames={belly_pain:'배 불편',burping:'트림',discomfort:'불편함',hungry:'배고픔',lonely:'관심 필요',scared:'놀람'};
-function result(state,title,body){if(lastResult&&state!=='EXPERIMENTAL MATCH'&&state!=='DEMO · 예시'){$('modelStatus').textContent=title;return;}$('resultState').textContent=state;$('resultTitle').textContent=title;$('resultBody').textContent=body;}
-function clearCandidates(){ $('candidates').replaceChildren();$('candidates').hidden=true;$('analysisMeta').textContent=''; }
+// Keep the latest observation separate from the retained historical candidate.
+function observation(title,body){$('liveTitle').textContent=title;$('liveBody').textContent=body;}
+function result(state,title,body){
+  const matched=state==='EXPERIMENTAL MATCH',demo=state==='DEMO · 예시';
+  observation(matched?'울음으로 감지했어요':state==='READY TO LISTEN'?(lastResult?'듣기를 마쳤어요':'듣기 전이에요'):title,
+    matched?'연속 두 구간에서 같은 후보가 나왔어요.':body);
+  $('retainedHint').hidden=!lastResult||matched;
+  $('candidateLabel').textContent=lastResult?'마지막 원인 후보':demo?'가상 예시':'원인 후보';
+  if(lastResult&&!matched&&!demo){$('modelStatus').textContent=title;return;}
+  $('resultState').textContent=state;
+  $('resultTitle').textContent=matched||demo?title:'아직 후보가 없어요';
+  $('resultBody').textContent=matched||demo?body:'울음이 감지되고 연속 두 구간의 후보가 같을 때 표시해요.';
+  $('resultNotice').textContent=matched?'겹치는 구간의 일치 후보이며, 정확도나 실제 원인이 확인된 결과는 아니에요.':'소리만으로 실제 원인을 알 수는 없어요. 아기의 모습과 함께 확인해 주세요.';
+}
+function clearCandidates(){ $('candidates').replaceChildren();$('candidates').hidden=true;$('candidateDetails').hidden=true;$('analysisMeta').textContent=''; }
 function showCandidates(ranked){
   clearCandidates();for(const [index,item] of ranked.slice(0,3).entries()){
     const row=document.createElement('div');row.className='candidate';const order=document.createElement('small');order.textContent=`${index+1}위`;
     const label=document.createElement('strong');label.textContent=(labelNames[item.label]||'알 수 없음');row.append(order,label);$('candidates').append(row);
-  }$('candidates').hidden=false;
+  }$('candidates').hidden=false;$('candidateDetails').hidden=false;
 }
 function draw(data){
   const ratio=Math.min(window.devicePixelRatio||1,2),w=wave.clientWidth,h=wave.clientHeight;
@@ -111,7 +124,7 @@ function startWorker(){
     current.onmessage=({data})=>{
       if(!active())return;
       if(!data||typeof data!=='object'){modelError('분석 응답을 읽지 못했어요. 다시 연결해 주세요.');return;}
-      if(data.type==='progress'){if(data.stage==='reason-loading'&&data.id===requestId&&analysisBusy){clearTimeout(analysisTimeout);analysisTimeout=setTimeout(()=>{if(active())modelError('원인 모델을 내려받지 못했어요. 다시 연결해 주세요.');},90000);$('modelStatus').textContent='울음 감지 · 원인 모델 준비 중 (최초 약 8MB)';}else if(data.stage==='reason'&&data.id===requestId){$('modelStatus').textContent='울음 감지 · 원인 후보 비교 중';}else if(data.stage==='download'){$('modelStatus').textContent='울음 감지 모델을 내려받고 있어요';}else if(data.stage==='detector'){$('modelStatus').textContent='울음 감지 기능을 시작하고 있어요';}return;}
+      if(data.type==='progress'){if(data.stage==='reason-loading'&&data.id===requestId&&analysisBusy){clearTimeout(analysisTimeout);analysisTimeout=setTimeout(()=>{if(active())modelError('원인 모델을 내려받지 못했어요. 다시 연결해 주세요.');},90000);$('modelStatus').textContent='원인 모델 준비 중 · 최초 약 8MB';observation('울음으로 감지했어요','원인 후보를 비교할 준비를 하고 있어요.');}else if(data.stage==='reason'&&data.id===requestId){$('modelStatus').textContent='원인 후보 비교 중';observation('울음으로 감지했어요','학습된 소리와 비교하고 있어요.');}else if(data.stage==='download'){$('modelStatus').textContent='울음 감지 모델을 내려받고 있어요';}else if(data.stage==='detector'){$('modelStatus').textContent='울음 감지 기능을 시작하고 있어요';}return;}
       if(data.type==='ready'){clearTimeout(modelTimeout);workerReady=true;$('modelStatus').textContent='AI 준비 완료 · 소리 수집 중';result('AI LISTENING','울음 소리를 모으고 있어요','약 3초의 소리가 모이면 울음인지 먼저 확인해요.');return;}
       if(data.type==='error'){modelError('AI 분석을 완료하지 못했어요. 다시 연결해 주세요.');return;}
       if(data.type!=='result'||data.id!==requestId||!analysisBusy)return;
@@ -169,6 +182,6 @@ function demo(){
   function frame(t){if(!preview)return;draw(Float32Array.from({length:512},(_,i)=>Math.sin(i*.14+t*.004)*Math.sin(i*.027)*.5));$('meter').style.width=(45+Math.sin(t*.002)*15)+'%';raf=requestAnimationFrame(frame);}raf=requestAnimationFrame(frame);
 }
 function context(){const feed=$('feed').value,sleep=$('sleep').value;let title='아기의 표정과 주변 환경',body='소리만으로 원인을 정할 수 없어요. 아기를 직접 살펴보며 필요한 것을 확인해 주세요.';if(sleep==='hungry'||feed==='long'){title='수유가 필요한지 살펴봐 주세요';body='선택한 수유 간격이나 행동을 바탕으로 한 안내예요. 평소 수유 패턴과 지금 보이는 먹고 싶어 하는 신호를 함께 확인해 주세요.';}if(sleep==='tired'){title='졸린 모습인지 살펴봐 주세요';body='하품·눈 비빔을 선택하셨어요. 마지막 잠에서 깬 시간과 주변 빛·소음을 함께 확인해 보세요.';}if(sleep==='uncomfortable'){title='기저귀와 옷, 주변을 확인해 주세요';body='불편해 보이는 모습을 선택하셨어요. 젖은 기저귀나 조이는 옷이 있는지 직접 확인해 보세요.';}$('suggestTitle').textContent=title;$('suggestBody').textContent=body;}
-$('empty').onclick=start;$('stop').onclick=()=>stop();$('switch').onclick=switchCamera;$('demo').onclick=demo;$('enableAI').onchange=toggleAI;$('retryAI').onclick=()=>{$('enableAI').checked=true;startWorker();};$('boost').onchange=()=>{boostRevision++;pendingCandidate=null;};$('audioOnly').onclick=()=>start({audioOnly:true});$('feed').onchange=context;$('sleep').onchange=context;$('about').onclick=()=>$('aboutDialog').showModal();$('closeAbout').onclick=()=>$('aboutDialog').close();
+$('empty').onclick=start;$('stop').onclick=()=>stop();$('switch').onclick=switchCamera;$('demo').onclick=demo;$('enableAI').onchange=toggleAI;$('retryAI').onclick=()=>{$('enableAI').checked=true;startWorker();};$('boost').onchange=()=>{boostRevision++;pendingCandidate=null;};$('audioOnly').onclick=()=>start({audioOnly:true});$('feed').onchange=context;$('sleep').onchange=context;$('checkContext').onclick=()=>{$('contextPanel').open=true;$('contextSummary').focus();};$('verification').onclick=()=>$('aboutDialog').showModal();$('about').onclick=()=>$('aboutDialog').showModal();$('closeAbout').onclick=()=>$('aboutDialog').close();
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&(running||busy))stop('화면을 벗어나 측정을 종료했어요. 다시 시작해 주세요.');});window.addEventListener('pagehide',()=>stop());window.addEventListener('resize',()=>{if(!running)draw();});draw();
-if(document.modelContext?.registerTool){const lifecycle=new AbortController();try{Promise.resolve(document.modelContext.registerTool({name:'read_sound_session',title:'소리 관찰 상태 확인',description:'현재 화면의 관찰 상태와 실험 AI 연결 여부를 읽습니다. 녹음이나 카메라를 시작하지 않습니다.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute(input){if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length)throw new Error('입력은 빈 객체여야 합니다.');return{running,demo:preview,status:$('resultTitle').textContent,contextSuggestion:$('suggestTitle').textContent,experimentalAIEnabled:$('enableAI').checked,modelReady:workerReady,validatedCryTranslationAvailable:false};}},{signal:lifecycle.signal})).catch(()=>{});}catch{}window.addEventListener('pagehide',()=>lifecycle.abort());}
+if(document.modelContext?.registerTool){const lifecycle=new AbortController();try{Promise.resolve(document.modelContext.registerTool({name:'read_sound_session',title:'소리 관찰 상태 확인',description:'현재 화면의 관찰 상태와 실험 AI 연결 여부를 읽습니다. 녹음이나 카메라를 시작하지 않습니다.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute(input){if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length)throw new Error('입력은 빈 객체여야 합니다.');return{running,demo:preview,status:$('resultTitle').textContent,observation:$('liveTitle').textContent,lastCandidateCapturedAt:$('analysisMeta').textContent,contextSuggestion:$('suggestTitle').textContent,experimentalAIEnabled:$('enableAI').checked,modelReady:workerReady,validatedCryTranslationAvailable:false};}},{signal:lifecycle.signal})).catch(()=>{});}catch{}window.addEventListener('pagehide',()=>lifecycle.abort());}
