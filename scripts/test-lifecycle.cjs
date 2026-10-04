@@ -2,13 +2,13 @@ const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/st
 const noop=()=>{};
 function setup(){
  const els={},workers=[],events={},trackEvents={};let latestCapture,mediaResolve,mediaReject,mediaOptions;const timers=new Map();let timerId=0,stopped=0;
- const el=id=>els[id]??={textContent:'',value:'unknown',checked:false,style:{},hidden:false,clientWidth:500,clientHeight:60,children:[],replaceChildren(){this.children=[];},append(...children){this.children.push(...children);},play:async()=>{},getContext:()=>({setTransform:noop,clearRect:noop,beginPath:noop,moveTo:noop,lineTo:noop,stroke:noop}),focus(){this.focused=true;},showModal(){this.open=true;},close(){this.open=false;}};
- class AC{constructor(){this.currentTime=3.072;this.audioWorklet={addModule:async()=>{}};this.destination={};}async resume(){}async close(){}addEventListener(){}createAnalyser(){return {fftSize:2048,getFloatTimeDomainData:noop};}createMediaStreamSource(){return{connect:noop,disconnect:noop};}}
+ const el=id=>els[id]??={textContent:'',value:'unknown',checked:false,style:{},hidden:false,clientWidth:500,clientHeight:60,children:[],replaceChildren(){this.children=[];},append(...children){this.children.push(...children);},play:async()=>{},getContext:()=>({setTransform:noop,clearRect:noop,beginPath:noop,moveTo:noop,lineTo:noop,stroke:noop}),select(){this.selected=true;},focus(){this.focused=true;},showModal(){this.open=true;},close(){this.open=false;}};
+ class AC{constructor(){this.sampleRate=48000;this.currentTime=3.072;this.audioWorklet={addModule:async()=>{}};this.destination={};}async resume(){}async close(){}addEventListener(){}createAnalyser(){return {fftSize:2048,getFloatTimeDomainData:noop};}createMediaStreamSource(){return{connect:noop,disconnect:noop};}}
  class Capture{constructor(){latestCapture=this;this.port={};}connect(){}disconnect(){this.disconnected=true;}}
  class Worker{constructor(){workers.push(this);this.sent=[];}postMessage(x){this.sent.push(x);}terminate(){this.terminated=true;}}
  const ctx={document:{getElementById:el,createElement:()=>({className:'',append:noop}),addEventListener:(n,f)=>events[n]=f},window:{devicePixelRatio:1,isSecureContext:true,AudioContext:AC,AudioWorkletNode:Capture,addEventListener:noop},AudioWorkletNode:Capture,Worker,navigator:{mediaDevices:{getUserMedia:options=>{mediaOptions=options;return new Promise((resolve,reject)=>{mediaResolve=resolve;mediaReject=reject;});}}},performance,requestAnimationFrame:()=>1,cancelAnimationFrame:noop,setInterval:()=>1,clearInterval:noop,setTimeout:f=>{timers.set(++timerId,f);return timerId;},clearTimeout:id=>timers.delete(id),Float32Array,AbortController,console};
  vm.createContext(ctx);vm.runInContext(fs.readFileSync('dist/app.js','utf8'),ctx);
- return{ctx,el,workers,events,trackEvents,run:s=>vm.runInContext(s,ctx),rejectMedia:name=>mediaReject(Object.assign(new Error(name),{name})),flushMedia:()=>mediaResolve({getVideoTracks:()=>[{stop:noop}],getAudioTracks:()=>[{addEventListener:(name,handler)=>trackEvents[name]=handler}],getTracks:()=>[{stop:()=>stopped++,addEventListener:noop}]}),get mediaOptions(){return mediaOptions;},get capture(){return latestCapture;},get stopped(){return stopped;}};
+ return{ctx,el,workers,events,trackEvents,run:s=>vm.runInContext(s,ctx),rejectMedia:name=>mediaReject(Object.assign(new Error(name),{name})),flushMedia:()=>mediaResolve({getVideoTracks:()=>[{stop:noop}],getAudioTracks:()=>[{getSettings:()=>({sampleRate:48000,channelCount:1,echoCancellation:false,deviceId:'private-device-id'}),addEventListener:(name,handler)=>trackEvents[name]=handler}],getTracks:()=>[{stop:()=>stopped++,addEventListener:noop}]}),get mediaOptions(){return mediaOptions;},get capture(){return latestCapture;},get stopped(){return stopped;}};
 }
 (async()=>{
  const a=setup();a.el('enableAI').checked=true;
@@ -17,11 +17,17 @@ function setup(){
  a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,endTime:3.072,sequence:1}});
  a.capture.port.onmessage({data:{samples:new Float32Array(49152),sampleRate:16000,endTime:3.072,sequence:2}});
  assert.equal(worker.sent.filter(x=>x.type==='analyze').length,1,'no analysis backlog');
+ let device=JSON.parse(a.run('deviceReport()'));
+ assert.equal(device.session.audioContextRate,48000);assert.equal(device.session.inputSettings.sampleRate,48000);
+ assert.equal(device.session.capturedWindows,2);assert.equal(device.session.submittedWindows,1);assert.equal(device.session.skippedWhileBusy,1);
+ assert.equal(device.session.completedResponses,0);assert.equal(device.session.meanResponseMs,null);
+ assert.ok(!JSON.stringify(device).includes('private-device-id'),'diagnostics exclude device identifiers');
 
  const id=worker.sent[1].id;
  const ranked=[{label:'hungry',score:.8},{label:'burping',score:.1}];
  const first={type:'result',id,status:'classified',uncertain:false,ranked,durationMs:200};
  worker.onmessage({data:first});
+ device=JSON.parse(a.run('deviceReport()'));assert.equal(device.session.completedResponses,1);assert.ok(Number.isFinite(device.session.meanResponseMs));
  assert.equal(a.el('candidates').hidden,true,'one window must not show a reason');
  worker.onmessage({data:first});
  assert.equal(a.el('candidates').hidden,true,'duplicate response cannot corroborate itself');
@@ -89,9 +95,15 @@ function setup(){
  assert.equal(a.capture.port.onmessage,null);assert.match(a.el('modelStatus').textContent,/듣기 종료/);
  worker.onmessage({data:first});assert.equal(a.el('resultTitle').textContent,finalTitle,'ignore stale model result');
  assert.equal(a.el('liveTitle').textContent,'듣기를 마쳤어요');
+ a.el('deviceCheck').onclick();assert.equal(a.el('deviceDialog').open,true);
+ device=JSON.parse(a.el('deviceReport').value);assert.equal(device.session.state,'stopped');assert.ok(device.session.failures['analysis-failed']>0);assert.equal(device.session.staleResults,1);
+ assert.ok(!a.el('deviceReport').value.includes('트림'),'report excludes reason labels');
+ let copied;a.ctx.navigator.clipboard={writeText:async text=>{copied=text;}};await a.el('copyDeviceCheck').onclick();assert.equal(JSON.parse(copied).app,'응애톡');
+ a.ctx.navigator.clipboard={writeText:async()=>{throw new Error('denied');}};await a.el('copyDeviceCheck').onclick();assert.equal(a.el('deviceReport').selected,true,'clipboard failure offers manual selection');
+ a.el('closeDeviceCheck').onclick();assert.equal(a.el('deviceDialog').open,false);
  a.el('checkContext').onclick();assert.equal(a.el('contextPanel').open,true);assert.equal(a.el('contextSummary').focused,true,'manual context receives focus');
  a.el('verification').onclick();assert.equal(a.el('aboutDialog').open,true);a.el('closeAbout').onclick();assert.equal(a.el('aboutDialog').open,false);
- const restart=a.el('empty').onclick();assert.equal(a.el('candidates').hidden,true,'new session resets last result');assert.equal(a.el('retainedHint').hidden,true);assert.equal(a.el('candidateDetails').hidden,true);assert.equal(a.el('resultTitle').textContent,'아직 후보가 없어요');
+ const restart=a.el('empty').onclick();assert.equal(a.el('candidates').hidden,true,'new session resets last result');assert.equal(a.el('retainedHint').hidden,true);assert.equal(a.el('candidateDetails').hidden,true);assert.equal(a.el('resultTitle').textContent,'아직 후보가 없어요');assert.equal(JSON.parse(a.run('deviceReport()')).session.capturedWindows,0,'new session resets diagnostic counters');
  await new Promise(setImmediate);a.flushMedia();await restart;a.run('stop()');
  const b=setup();const pending=b.el('empty').onclick();await new Promise(setImmediate);b.run('stop()');b.flushMedia();await pending;assert.equal(b.stopped,1,'late permission result releases tracks');assert.equal(b.workers.length,0);
  const mic=setup();const micStart=mic.el('audioOnly').onclick();await new Promise(setImmediate);assert.equal(mic.mediaOptions.video,false,'audio-only does not request camera');mic.flushMedia();await micStart;assert.equal(mic.el('switch').disabled,true);assert.equal(mic.el('cameraStatus').textContent,'마이크 켜짐');mic.run('stop()');

@@ -203,3 +203,10 @@ header { padding-top: max(20px, env(safe-area-inset-top)); }
 .technical-details { border-top: 1px solid var(--line); }
 .technical-details p { font-size: 13px; }
 @media (max-width: 760px) { .live-observation { padding: 16px; margin: 18px 0; } dialog { padding: 22px; } }
+
+#deviceReport { width: 100%; resize: vertical; min-height: 160px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #faf9fc; color: var(--ink); font: 12px/1.6 monospace; word-break: break-all; }
+.device-steps { padding-left: 22px; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.device-steps li { margin: 10px 0; }
+#deviceCheckStatus { padding: 14px; background: #f5f3f9; border-radius: 12px; }
+#deviceCopyStatus:empty { display: none; }
+#deviceDialog .result-actions .primary { width: auto; margin-top: 0; }
