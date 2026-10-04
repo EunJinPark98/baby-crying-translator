@@ -84,3 +84,27 @@ node scripts/evaluation/compare-preprocessing.cjs /tmp/eungaetalk-study /tmp/eun
 - [ESC-50 및 원본 라이선스](https://github.com/karolpiczak/ESC-50). 음원을 저장소/서비스에 재배포하지 않는다.
 - [Google YAMNet TFLite](https://www.kaggle.com/models/google/yamnet/tfLite/tflite/1).
 - [compact CNN v0.2](https://huggingface.co/manfye/baby-cry-detector/tree/4495440c7aeb0b04f12b9b991df5d92c062f92a0), CC-BY-SA-4.0 모델/문서.
+
+## 2026-10-04 입력 음량 비교 (모델 정확도 개선 실험과 구분)
+
+실행 전에 원본, -20dB, -40dB의 세 조건과 보정 ON/OFF를 고정했다.
+동일한 112개 원본 파일의 SHA-256을 확인하고, 운영 `prepareAudio`와
+운영 MediaPipe/WASM 모델을 사용했다. 원본 음량을 수학적으로 줄였으며
+마이크 자체 잡음·기기 자동 보정·거리/반사음은 추가하지 않았다.
+
+| 입력 감쇠 | 보정 OFF 울음 감지 / 80 | 보정 ON 울음 감지 / 80 | 비울음 울음 판정 OFF / ON (각 144구간) |
+| --- | ---: | ---: | ---: |
+| 원본 | 55 | 55 | 0 / 0 |
+| -20dB | 54 | 55 | 0 / 0 |
+| -40dB | 0 | 50 | 0 / 0 |
+
+이 표본에서 기존 보정 기능의 저음량 감지 회복 효과를 관찰했다.
+**새 모델의 정확도 개선이나 원인 추정 정확도를 입증한 결과가 아니다.**
+기본 설정은 이미 ON이었고 이번 작업에서 임계값/모델을 변경하지 않았다.
+겹치는 구간, 파일 단위 약한 정답, 알려지지 않은 학습 중복, 한정된
+비울음 범주 때문에 실사용 정확도/오탐률로 일반화할 수 없다.
+
+재현: `node scripts/evaluation/compare-input-levels.cjs /path/to/study report.json`.
+전체 구간별 결과: `input-level-comparison-2026-10-04.json`.
+후속 검증에는 튜닝에 쓰지 않은 아기·기기·환경별 분리 자료, 사람의
+구간 라벨링, 혼합음/실제 마이크 잡음, 이유별 정답 자료가 필요하다.
